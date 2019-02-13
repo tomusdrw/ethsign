@@ -37,9 +37,9 @@ impl Signature {
         let context = Secp256k1::new();
         let sig = RecoverableSignature::from_compact(&data, RecoveryId::from_i32(self.v as i32)?)?;
         let pubkey = context.recover(&Message::from_slice(message)?, &sig)?;
-        let public = pubkey.serialize_uncompressed();
+        let public = &pubkey.serialize_uncompressed()[1..];
 
-        Ok(PublicKey::from_slice(&public).expect("The length is correct; qed"))
+        Ok(PublicKey::from_slice(public).expect("The length is correct; qed"))
     }
 }
 
