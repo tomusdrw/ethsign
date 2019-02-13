@@ -1,12 +1,13 @@
 [package]
-name = "ethkey-sign"
+authors = ["Parity Technologies <admin@parity.io>"]
 description = "A library to read JSON keyfiles and sign Ethereum stuff."
-repository = "https://github.com/tomusdrw/ethkey-sign"
-homepage = "https://github.com/tomusdrw/ethkey-sign"
-documentation = "https://docs.rs/crate/ethkey-sign"
-version = "0.1.0"
-authors = ["Tomasz Drwięga <tomusdrw@gmail.com>"]
+documentation = "https://docs.rs/crate/ethsign"
 edition = "2018"
+homepage = "https://github.com/tomusdrw/ethsign"
+license = "GPL-3.0"
+name = "ethsign"
+repository = "https://github.com/tomusdrw/ethsign"
+version = "0.1.0"
 
 [dependencies]
 rustc-hex = "2.0"

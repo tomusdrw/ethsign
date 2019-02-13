@@ -9,7 +9,7 @@ version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "ethkey-sign"
+name = "ethsign"
 version = "0.1.0"
 dependencies = [
  "parity-crypto 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
