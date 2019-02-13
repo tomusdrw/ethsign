@@ -3,6 +3,7 @@ use crate::protected::Protected;
 use parity_crypto::Keccak256;
 
 /// Message signature
+#[derive(Debug, PartialEq, Eq)]
 pub struct Signature {
     /// V value
     pub v: u8,
@@ -30,6 +31,7 @@ impl Signature {
 }
 
 /// Represents public part of the Ethereum key.
+#[derive(Debug, PartialEq, Eq)]
 pub struct PublicKey {
     public: [u8; 64],
     address: [u8; 20],
@@ -65,6 +67,7 @@ impl PublicKey {
 }
 
 /// Represents the private part of the Ethereum key
+#[derive(Debug, PartialEq, Eq)]
 pub struct SecretKey {
     /// Valid secret (make sure to validate through secp256k1)
     secret: Protected,
