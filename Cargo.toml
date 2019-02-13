@@ -1,0 +1,16 @@
+[package]
+name = "ethkey-sign"
+description = "A library to read JSON keyfiles and sign Ethereum stuff."
+repository = "https://github.com/tomusdrw/ethkey-sign"
+homepage = "https://github.com/tomusdrw/ethkey-sign"
+documentation = "https://docs.rs/crate/ethkey-sign"
+version = "0.1.0"
+authors = ["Tomasz Drwięga <tomusdrw@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+rustc-hex = "2.0"
+secp256k1 = "0.12"
+serde = { version = "1.0", features = ["derive"]}
+serde_json = "1.0"
+parity-crypto = "0.3"
