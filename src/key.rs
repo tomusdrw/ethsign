@@ -2,6 +2,10 @@ use crate::keyfile::KeyFile;
 use crate::protected::Protected;
 use parity_crypto::Keccak256;
 
+lazy_static::lazy_static! {
+	pub static ref SECP256K1: secp256k1::Secp256k1<secp256k1::All> = secp256k1::Secp256k1::new();
+}
+
 /// Message signature
 pub struct Signature {
     /// V value
@@ -15,14 +19,13 @@ pub struct Signature {
 impl Signature {
     /// Recover the signer of the message.
     pub fn recover(&self, message: &[u8]) -> Result<PublicKey, secp256k1::Error> {
-        use secp256k1::{RecoverableSignature, Message, RecoveryId, Secp256k1};
+        use secp256k1::{RecoverableSignature, Message, RecoveryId};
         let mut data = [0u8; 64];
         data[0..32].copy_from_slice(&self.r);
         data[32..64].copy_from_slice(&self.s);
 
-        let context = Secp256k1::new();
         let sig = RecoverableSignature::from_compact(&data, RecoveryId::from_i32(self.v as i32)?)?;
-        let pubkey = context.recover(&Message::from_slice(message)?, &sig)?;
+        let pubkey = SECP256K1.recover(&Message::from_slice(message)?, &sig)?;
         let public = pubkey.serialize_uncompressed();
 
         Ok(PublicKey::from_slice(&public).expect("The length is correct; qed"))
@@ -133,23 +136,21 @@ impl SecretKey {
 
     /// Public key
     pub fn public(&self) -> PublicKey {
-        use secp256k1::{SecretKey, Secp256k1};
+        use secp256k1::{SecretKey};
         let sec = SecretKey::from_slice(&self.secret.0)
             .expect("The key is validated in the constructor; qed");
 
-        let context = Secp256k1::new();
-        let pubkey = secp256k1::PublicKey::from_secret_key(&context, &sec);
+        let pubkey = secp256k1::PublicKey::from_secret_key(&SECP256K1, &sec);
         
         PublicKey::from_slice(&pubkey.serialize_uncompressed()[1..])
             .expect("The length of the key is correct; qed")
     }
 
-    /// Sign given 32-byte message with the key.
+    /// Sign given 32-byte `message` with the key.
     pub fn sign(&self, message: &[u8]) -> Result<Signature, secp256k1::Error> {
-        use secp256k1::{SecretKey, Secp256k1, Message};
-        let context = Secp256k1::new();
+        use secp256k1::{SecretKey, Message};
         let sec = SecretKey::from_slice(&self.secret.0)?;
-        let sig = context.sign_recoverable(&Message::from_slice(message)?, &sec);
+        let sig = SECP256K1.sign_recoverable(&Message::from_slice(message)?, &sec);
         let (rec_id, data) = sig.serialize_compact();
         let v = rec_id.to_i32() as u8;
         let mut r = [0u8; 32];
