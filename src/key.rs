@@ -37,9 +37,9 @@ impl Signature {
         let context = Secp256k1::new();
         let sig = RecoverableSignature::from_compact(&data, RecoveryId::from_i32(self.v as i32)?)?;
         let pubkey = context.recover(&Message::from_slice(message)?, &sig)?;
-        let public = pubkey.serialize_uncompressed();
+        let public = &pubkey.serialize_uncompressed()[1..];
 
-        Ok(PublicKey::from_slice(&public).expect("The length is correct; qed"))
+        Ok(PublicKey::from_slice(public).expect("The length is correct; qed"))
     }
 }
 
@@ -222,5 +222,22 @@ mod tests {
         assert_eq!(format!("{:?}", key), "SecretKey { secret: Protected(77..183) }");
         assert_eq!(format!("{:?}", pub_key), "PublicKey { address: \"00a329c0648769a73afac7f9381e08fb43dbea72\", public: \"3fa8c08c65a83f6b4ea3e04e1cc70cbe3cd391499e3e05ab7dedf28aff9afc538200ff93e3f2b2cb5029f03c7ebee820d63a4c5a9541c83acebe293f54cacf0e\" }");
         assert_eq!(format!("{:?}", signature), "Signature { v: 0, r: \"8a4f2d73a2cc80cdfe27c6e3ab68de7913865a5968298731bee7b4673752fd76\", s: \"8a4f2d73a2cc80cdfe27c6e3ab68de7913865a5968298731bee7b4673752fd76\" }");
+    }
+
+    #[test]
+    fn should_recover_succesfuly() {
+        let v = 0u8;
+        let r2: Vec<u8> = "319a63079d7cdd4e1ec99996f840253c1b0e41a4caf474602c43e83b5a8de183".from_hex().unwrap();
+        let s2: Vec<u8> = "2e9424ac2ba94abc12a79349888545f26958c2fccc28d91f6dee72ab9c069738".from_hex().unwrap();
+        let mut s = [0u8; 32];
+        s.copy_from_slice(&s2);
+        let mut r = [0u8; 32];
+        r.copy_from_slice(&r2);
+
+        let signature = Signature { v, s, r };
+        let message: Vec<u8> = "044a19199dc40e61210715bea94bcb0fff4c8dfa1c20988ab7783fc82c802a9f".from_hex().unwrap();
+
+        let pub_key = signature.recover(&message).unwrap();
+        assert_eq!(format!("{:?}", pub_key), "PublicKey { address: \"00af8b5cc1f8d0e862b4f303c0fa59b3709c2bb3\", public: \"929acaa0a4a4246225162496cc18e50719bb057519a150a94cfef77ae5e0dd50786c54cfe05f564d2ef09aae0b587bf73b83f45636def775bbf9010dded0e235\" }");
     }
 }
