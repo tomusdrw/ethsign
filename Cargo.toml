@@ -7,7 +7,7 @@ homepage = "https://github.com/tomusdrw/ethsign"
 license = "GPL-3.0"
 name = "ethsign"
 repository = "https://github.com/tomusdrw/ethsign"
-version = "0.1.1"
+version = "0.1.2"
 
 [dependencies]
 rustc-hex = "2.0"
