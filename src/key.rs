@@ -1,9 +1,12 @@
+use std::fmt;
+
 use crate::keyfile::KeyFile;
 use crate::protected::Protected;
 use parity_crypto::Keccak256;
+use rustc_hex::ToHex;
 
 /// Message signature
-#[derive(Debug, PartialEq, Eq)]
+#[derive(PartialEq, Eq)]
 pub struct Signature {
     /// V value
     pub v: u8,
@@ -11,6 +14,16 @@ pub struct Signature {
     pub r: [u8; 32],
     /// S value
     pub s: [u8; 32],
+}
+
+impl fmt::Debug for Signature {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("Signature")
+            .field("v", &self.v)
+            .field("r", &ToHex::to_hex::<String>(&self.r[..]))
+            .field("s", &ToHex::to_hex::<String>(&self.r[..]))
+            .finish()
+    }
 }
 
 impl Signature {
@@ -31,10 +44,18 @@ impl Signature {
 }
 
 /// Represents public part of the Ethereum key.
-#[derive(Debug)]
 pub struct PublicKey {
     public: [u8; 64],
     address: [u8; 20],
+}
+
+impl fmt::Debug for PublicKey {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("PublicKey")
+            .field("address", &ToHex::to_hex::<String>(&self.address[..]))
+            .field("public", &ToHex::to_hex::<String>(&self.public[..]))
+            .finish()
+    }
 }
 
 impl PublicKey {
@@ -189,5 +210,17 @@ mod tests {
 
         assert_eq!(&pub_key.bytes().to_hex::<String>(), "3fa8c08c65a83f6b4ea3e04e1cc70cbe3cd391499e3e05ab7dedf28aff9afc538200ff93e3f2b2cb5029f03c7ebee820d63a4c5a9541c83acebe293f54cacf0e");
         assert_eq!(pub_key.address().to_hex::<String>(), "00a329c0648769a73afac7f9381e08fb43dbea72");
+    }
+
+    #[test]
+    fn should_have_debug_impl() {
+        let secret: Vec<u8> = "4d5db4107d237df6a3d58ee5f70ae63d73d7658d4026f2eefd2f204c81682cb7".from_hex().unwrap();
+        let key = SecretKey::from_raw(&secret).unwrap();
+        let pub_key = key.public();
+        let signature = key.sign(&secret).unwrap();
+
+        assert_eq!(format!("{:?}", key), "SecretKey { secret: Protected(77..183) }");
+        assert_eq!(format!("{:?}", pub_key), "PublicKey { address: \"00a329c0648769a73afac7f9381e08fb43dbea72\", public: \"3fa8c08c65a83f6b4ea3e04e1cc70cbe3cd391499e3e05ab7dedf28aff9afc538200ff93e3f2b2cb5029f03c7ebee820d63a4c5a9541c83acebe293f54cacf0e\" }");
+        assert_eq!(format!("{:?}", signature), "Signature { v: 0, r: \"8a4f2d73a2cc80cdfe27c6e3ab68de7913865a5968298731bee7b4673752fd76\", s: \"8a4f2d73a2cc80cdfe27c6e3ab68de7913865a5968298731bee7b4673752fd76\" }");
     }
 }
