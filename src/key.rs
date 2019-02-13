@@ -18,13 +18,19 @@ pub struct Signature {
 
 impl Signature {
     /// Recover the signer of the message.
-    pub fn recover(&self, message: &[u8]) -> Result<PublicKey, secp256k1::Error> {
-        use secp256k1::{RecoverableSignature, Message, RecoveryId};
+    pub fn recoverable_signature(&self) -> Result<secp256k1::RecoverableSignature, secp256k1::Error> {
+        use secp256k1::{RecoverableSignature, RecoveryId};
         let mut data = [0u8; 64];
         data[0..32].copy_from_slice(&self.r);
         data[32..64].copy_from_slice(&self.s);
 
-        let sig = RecoverableSignature::from_compact(&data, RecoveryId::from_i32(self.v as i32)?)?;
+        RecoverableSignature::from_compact(&data, RecoveryId::from_i32(self.v as i32)?)
+    }
+
+    /// Recover the signer of the message.
+    pub fn recover(&self, message: &[u8]) -> Result<PublicKey, secp256k1::Error> {
+        use secp256k1::Message;
+        let sig = self.recoverable_signature()?;
         let pubkey = SECP256K1.recover(&Message::from_slice(message)?, &sig)?;
         let public = pubkey.serialize_uncompressed();
 
@@ -64,6 +70,27 @@ impl PublicKey {
     /// Returns the ethereum address associated with this public key.
     pub fn address(&self) -> &[u8; 20] {
         &self.address
+    }
+
+    /// Checks if given `signature` is a valid ECDSA signature for `message` using the this public key.
+    /// Returns `Ok(true)` on success.
+    pub fn verify(self, signature: &Signature, message: &[u8]) -> Result<bool, secp256k1::Error> {
+        use secp256k1::{Message, PublicKey};
+        let sig = signature.recoverable_signature()?.to_standard();
+
+        let pdata: [u8; 65] = {
+            let mut temp = [4u8; 65];
+            temp[1..65].copy_from_slice(&self.public);
+            temp
+        };
+
+        let publ = PublicKey::from_slice(&pdata)?;
+
+        match SECP256K1.verify(&Message::from_slice(&message)?, &sig, &publ) {
+            Ok(_) => Ok(true),
+            Err(secp256k1::Error::IncorrectSignature) => Ok(false),
+            Err(x) => Err(secp256k1::Error::from(x))
+        }
     }
 }
 
@@ -187,5 +214,33 @@ mod tests {
 
         assert_eq!(&pub_key.bytes().to_hex::<String>(), "3fa8c08c65a83f6b4ea3e04e1cc70cbe3cd391499e3e05ab7dedf28aff9afc538200ff93e3f2b2cb5029f03c7ebee820d63a4c5a9541c83acebe293f54cacf0e");
         assert_eq!(pub_key.address().to_hex::<String>(), "00a329c0648769a73afac7f9381e08fb43dbea72");
+    }
+
+    #[test]
+    fn test_sign_verify() {
+        // given
+        let key = SecretKey::from_raw(&rand::random::<[u8; 32]>()).unwrap();
+        let msg = rand::random::<[u8; 32]>();
+
+        // when
+        let sig = key.sign(&msg);
+
+        // then
+        assert!(key.public().verify(&sig.unwrap(), &msg).unwrap());
+    }
+
+    #[test]
+    fn test_sign_verify_fail_for_other_key() {
+        // given
+        let key = SecretKey::from_raw(&rand::random::<[u8; 32]>()).unwrap();
+        let other_key = SecretKey::from_raw(&rand::random::<[u8; 32]>()).unwrap();
+        let msg = rand::random::<[u8; 32]>();
+
+        // when
+        let sig = key.sign(&msg).unwrap();
+
+        // then
+        assert!(key.public().verify(&sig, &msg).unwrap());
+        assert!(!other_key.public().verify(&sig, &msg).unwrap());
     }
 }
