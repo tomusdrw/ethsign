@@ -5,11 +5,11 @@ use std::num::NonZeroU32;
 use serde::{Serialize, Deserialize};
 
 /// A set of bytes.
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Bytes(#[serde(with="bytes")] pub Vec<u8>);
 
 /// Key file
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct KeyFile {
     /// Keyfile UUID
@@ -23,7 +23,7 @@ pub struct KeyFile {
 }
 
 /// Encrypted secret
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Crypto {
     /// Cipher definition
 	pub cipher: Cipher,
@@ -40,7 +40,7 @@ pub struct Crypto {
 }
 
 /// Cipher kind
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Cipher {
     /// AES 128 CTR
     #[serde(rename = "aes-128-ctr")]
@@ -48,14 +48,14 @@ pub enum Cipher {
 }
 
 /// AES 128 CTR params
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Aes128Ctr {
     /// Initialisation vector
     pub iv: Bytes,
 }
 
 /// Key-Derivation function
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Kdf {
     /// Password-based KDF 2
@@ -63,7 +63,7 @@ pub enum Kdf {
 }
 
 /// PBKDF2 params
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Pbkdf2 {
     /// C
 	pub c: NonZeroU32,
@@ -76,7 +76,7 @@ pub struct Pbkdf2 {
 }
 
 /// PRF
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Prf {
     /// HMAC SHA256
     #[serde(rename = "hmac-sha256")]
