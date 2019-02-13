@@ -8,4 +8,5 @@ mod protected;
 pub mod keyfile;
 
 pub use self::key::{PublicKey, SecretKey, Signature};
+pub use self::protected::Protected;
 
