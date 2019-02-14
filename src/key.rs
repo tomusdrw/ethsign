@@ -1,9 +1,8 @@
 use std::fmt;
 
 use crate::ec;
-use crate::keyfile::{KeyFile, Crypto};
+use crate::keyfile::KeyFile;
 use crate::protected::Protected;
-use parity_crypto::Keccak256;
 use rustc_hex::ToHex;
 
 /// Message signature
@@ -123,31 +122,7 @@ impl SecretKey {
 
     /// Convert a keyfile into Ethereum Key
     pub fn from_keyfile(keyfile: &KeyFile, password: &Protected) -> Result<Self, Error> {
-        Self::from_crypto(&keyfile.crypto, password)
-    }
-
-    /// Convert a crypto part of a keyfile into Ethereum Key
-    pub fn from_crypto(crypto: &Crypto, password: &Protected) -> Result<Self, Error> {
-        let (left_bits, right_bits) = parity_crypto::derive_key_iterations(
-            &password.0,
-            &crypto.kdfparams.salt.0,
-            crypto.kdfparams.c,
-        );
-
-        let mac = parity_crypto::derive_mac(&right_bits, &crypto.ciphertext.0).keccak256();
-
-        if !parity_crypto::is_equal(&mac, &crypto.mac.0) {
-            return Err(Error::InvalidPassword);
-        }
-
-        let mut plain = Vec::new();
-        plain.resize(crypto.ciphertext.0.len(), 0);
-        parity_crypto::aes::decrypt_128_ctr(
-            &left_bits,
-            &crypto.cipherparams.iv.0,
-            &crypto.ciphertext.0,
-            &mut plain,
-        ).map_err(parity_crypto::Error::from).map_err(Error::Crypto)?;
+        let plain = keyfile.crypto.decrypt(password)?;
 
         Self::from_raw(&plain).map_err(Error::Secp256k1)
     }

@@ -11,4 +11,3 @@ pub mod keyfile;
 pub use self::ec::Error;
 pub use self::key::{PublicKey, SecretKey, Signature};
 pub use self::protected::Protected;
-

@@ -1,6 +1,9 @@
 //! JSON keyfile representation.
 
 use std::num::NonZeroU32;
+use parity_crypto::Keccak256;
+use crate::Protected;
+use crate::key::Error;
 
 use serde::{Serialize, Deserialize};
 
@@ -81,6 +84,34 @@ pub enum Prf {
     /// HMAC SHA256
     #[serde(rename = "hmac-sha256")]
     HmacSha256,
+}
+
+impl Crypto {
+    /// Decrypt into plain data
+    pub fn decrypt(&self, password: &Protected) -> Result<Vec<u8>, Error> {
+        let (left_bits, right_bits) = parity_crypto::derive_key_iterations(
+            &password.0,
+            &self.kdfparams.salt.0,
+            self.kdfparams.c,
+        );
+
+        let mac = parity_crypto::derive_mac(&right_bits, &self.ciphertext.0).keccak256();
+
+        if !parity_crypto::is_equal(&mac, &self.mac.0) {
+            return Err(Error::InvalidPassword);
+        }
+
+        let mut plain = Vec::new();
+        plain.resize(self.ciphertext.0.len(), 0);
+        parity_crypto::aes::decrypt_128_ctr(
+            &left_bits,
+            &self.cipherparams.iv.0,
+            &self.ciphertext.0,
+            &mut plain,
+        ).map_err(parity_crypto::Error::from).map_err(Error::Crypto)?;
+
+        Ok(plain)
+    }
 }
 
 mod bytes {
