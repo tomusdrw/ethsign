@@ -6,6 +6,7 @@ use crate::Protected;
 use crate::key::Error;
 
 use serde::{Serialize, Deserialize};
+use rand::{thread_rng, RngCore};
 
 /// A set of bytes.
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -87,6 +88,50 @@ pub enum Prf {
 }
 
 impl Crypto {
+    /// Encrypt plain data with password
+    pub fn encrypt(plain: &[u8], password: &Protected, iterations: NonZeroU32) -> Result<Self, Error> {
+        let mut rng = thread_rng();
+
+        let mut salt = [0u8; 32];
+        let mut iv = [0u8; 16];
+
+        rng.fill_bytes(&mut salt);
+        rng.fill_bytes(&mut iv);
+
+        // two parts of derived key
+        // DK = [ DK[0..15] DK[16..31] ] = [derived_left_bits, derived_right_bits]
+        let (derived_left_bits, derived_right_bits) =
+            parity_crypto::derive_key_iterations(&password.0, &salt, iterations);
+
+        // preallocated buffer to hold cipher
+        // length = length(plain) as we are using CTR-approach
+        let plain_len = plain.len();
+        let mut ciphertext = Bytes(vec![0u8; plain_len]);
+
+        // aes-128-ctr with initial vector of iv
+        parity_crypto::aes::encrypt_128_ctr(&derived_left_bits, &iv, plain, &mut *ciphertext.0)
+            .map_err(parity_crypto::Error::from).map_err(Error::Crypto)?;
+
+        // KECCAK(DK[16..31] ++ <ciphertext>), where DK[16..31] - derived_right_bits
+        let mac = parity_crypto::derive_mac(&derived_right_bits, &*ciphertext.0).keccak256();
+
+        Ok(Crypto {
+            cipher: Cipher::Aes128Ctr,
+            cipherparams: Aes128Ctr {
+                iv: Bytes(iv.to_vec()),
+            },
+            ciphertext,
+            kdf: Kdf::Pbkdf2,
+            kdfparams: Pbkdf2 {
+                c: iterations,
+                dklen: parity_crypto::KEY_LENGTH as u32,
+                prf: Prf::HmacSha256,
+                salt: Bytes(salt.to_vec()),
+            },
+            mac: Bytes(mac.to_vec()),
+        })
+    }
+
     /// Decrypt into plain data
     pub fn decrypt(&self, password: &Protected) -> Result<Vec<u8>, Error> {
         let (left_bits, right_bits) = parity_crypto::derive_key_iterations(
@@ -165,5 +210,16 @@ mod tests {
     #[test]
     fn should_deserialize() {
         let _keyfile: KeyFile = serde_json::from_str(include_str!("../res/wallet.json")).unwrap();
+    }
+
+    #[test]
+    fn decrypt_encrypt() {
+        let data = &b"It was the year they finally immanentized the Eschaton."[..];
+        let password = Protected(b"discord".to_vec());
+
+        let crypto = Crypto::encrypt(data, &password, NonZeroU32::new(10240).unwrap()).unwrap();
+        let decrypted = crypto.decrypt(&password).unwrap();
+
+        assert_eq!(data, decrypted.as_slice());
     }
 }
