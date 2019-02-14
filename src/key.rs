@@ -172,6 +172,11 @@ impl SecretKey {
 
         Ok(Signature { v, r, s })
     }
+
+    /// Get the underlying 32 byte slice of the secret key
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.secret.0
+    }
 }
 
 #[cfg(test)]
