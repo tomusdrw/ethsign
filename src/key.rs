@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::ec;
-use crate::keyfile::KeyFile;
+use crate::keyfile::{KeyFile, Crypto};
 use crate::protected::Protected;
 use parity_crypto::Keccak256;
 use rustc_hex::ToHex;
@@ -122,8 +122,12 @@ impl SecretKey {
     }
 
     /// Convert a keyfile into Ethereum Key
-    pub fn from_keyfile(keyfile: KeyFile, password: &Protected) -> Result<Self, Error> {
-        let crypto = keyfile.crypto;
+    pub fn from_keyfile(keyfile: &KeyFile, password: &Protected) -> Result<Self, Error> {
+        Self::from_crypto(&keyfile.crypto, password)
+    }
+
+    /// Convert a crypto part of a keyfile into Ethereum Key
+    pub fn from_crypto(crypto: &Crypto, password: &Protected) -> Result<Self, Error> {
         let (left_bits, right_bits) = parity_crypto::derive_key_iterations(
             &password.0,
             &crypto.kdfparams.salt.0,
@@ -179,7 +183,7 @@ mod tests {
     fn should_read_keyfile() {
         let keyfile: KeyFile = serde_json::from_str(include_str!("../res/wallet.json")).unwrap();
         let password = b"";
-        let key = SecretKey::from_keyfile(keyfile, &Protected(password.to_vec())).unwrap();
+        let key = SecretKey::from_keyfile(&keyfile, &Protected(password.to_vec())).unwrap();
         let pub_key = key.public();
 
         assert_eq!(pub_key.address().to_hex::<String>(), "005b3bcf82085eededd551f50de7892471ffb272");
