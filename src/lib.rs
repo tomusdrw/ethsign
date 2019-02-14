@@ -2,6 +2,8 @@
 
 #![warn(missing_docs)]
 
+pub(crate) mod ec;
+
 mod key;
 mod protected;
 

@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::ec;
 use crate::keyfile::KeyFile;
 use crate::protected::Protected;
 use parity_crypto::Keccak256;
@@ -28,18 +29,10 @@ impl fmt::Debug for Signature {
 
 impl Signature {
     /// Recover the signer of the message.
-    pub fn recover(&self, message: &[u8]) -> Result<PublicKey, secp256k1::Error> {
-        use secp256k1::{RecoverableSignature, Message, RecoveryId, Secp256k1};
-        let mut data = [0u8; 64];
-        data[0..32].copy_from_slice(&self.r);
-        data[32..64].copy_from_slice(&self.s);
+    pub fn recover(&self, message: &[u8]) -> Result<PublicKey, ec::Error> {
+        let uncompressed = ec::recover(self.v, &self.r, &self.s, message)?;
 
-        let context = Secp256k1::new();
-        let sig = RecoverableSignature::from_compact(&data, RecoveryId::from_i32(self.v as i32)?)?;
-        let pubkey = context.recover(&Message::from_slice(message)?, &sig)?;
-        let public = &pubkey.serialize_uncompressed()[1..];
-
-        Ok(PublicKey::from_slice(public).expect("The length is correct; qed"))
+        Ok(PublicKey::from_slice(&uncompressed[1..]).expect("The length is correct; qed"))
     }
 }
 
@@ -102,7 +95,7 @@ pub enum Error {
     /// Crypto error
     Crypto(parity_crypto::Error),
     /// Secp256k1 error
-    Secp256k1(secp256k1::Error),
+    Secp256k1(ec::Error),
 }
 
 impl std::fmt::Display for Error {
@@ -119,9 +112,9 @@ impl std::error::Error for Error {}
 
 impl SecretKey {
     /// Convert a raw bytes secret into Key
-    pub fn from_raw(slice: &[u8]) -> Result<Self, secp256k1::Error> {
+    pub fn from_raw(slice: &[u8]) -> Result<Self, ec::Error> {
         // verify correctness
-        secp256k1::SecretKey::from_slice(slice)?;
+        ec::verify_secret(slice)?;
 
         Ok(Self {
             secret: Protected(slice.to_vec()),
@@ -137,11 +130,11 @@ impl SecretKey {
             crypto.kdfparams.c,
         );
 
-		let mac = parity_crypto::derive_mac(&right_bits, &crypto.ciphertext.0).keccak256();
+        let mac = parity_crypto::derive_mac(&right_bits, &crypto.ciphertext.0).keccak256();
 
-		if !parity_crypto::is_equal(&mac, &crypto.mac.0) {
-			return Err(Error::InvalidPassword);
-		}
+        if !parity_crypto::is_equal(&mac, &crypto.mac.0) {
+            return Err(Error::InvalidPassword);
+        }
 
         let mut plain = Vec::new();
         plain.resize(crypto.ciphertext.0.len(), 0);
@@ -157,25 +150,17 @@ impl SecretKey {
 
     /// Public key
     pub fn public(&self) -> PublicKey {
-        use secp256k1::{SecretKey, Secp256k1};
-        let sec = SecretKey::from_slice(&self.secret.0)
+        let uncompressed = ec::secret_to_public(&self.secret.0)
             .expect("The key is validated in the constructor; qed");
 
-        let context = Secp256k1::new();
-        let pubkey = secp256k1::PublicKey::from_secret_key(&context, &sec);
-        
-        PublicKey::from_slice(&pubkey.serialize_uncompressed()[1..])
+        PublicKey::from_slice(&uncompressed[1..])
             .expect("The length of the key is correct; qed")
     }
 
     /// Sign given 32-byte message with the key.
-    pub fn sign(&self, message: &[u8]) -> Result<Signature, secp256k1::Error> {
-        use secp256k1::{SecretKey, Secp256k1, Message};
-        let context = Secp256k1::new();
-        let sec = SecretKey::from_slice(&self.secret.0)?;
-        let sig = context.sign_recoverable(&Message::from_slice(message)?, &sec);
-        let (rec_id, data) = sig.serialize_compact();
-        let v = rec_id.to_i32() as u8;
+    pub fn sign(&self, message: &[u8]) -> Result<Signature, ec::Error> {
+        let (v, data) = ec::sign(&self.secret.0, message)?;
+
         let mut r = [0u8; 32];
         r.copy_from_slice(&data[0..32]);
         let mut s = [0u8; 32];

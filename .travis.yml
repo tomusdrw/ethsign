@@ -16,6 +16,4 @@ matrix:
 before_script:
   - rustup toolchain install stable
 
-script:
-  - cargo build
-  - cargo test
+script: ./test.sh
