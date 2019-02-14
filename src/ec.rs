@@ -1,7 +1,8 @@
 pub use self::secp256k1::*;
 
 #[cfg(feature = "secp256k1-c")]
-pub mod secp256k1 {
+mod secp256k1 {
+    /// Alias type for `secp256k1::Error`
     pub type Error = secp256k1::Error;
 
     pub fn verify_secret(secret: &[u8]) -> Result<(), Error> {
@@ -55,6 +56,7 @@ pub mod secp256k1 {
 mod secp256k1 {
     use std::fmt;
 
+    /// Wrapper type around `libsecp256k1::Error`
     pub struct Error(libsecp256k1::Error);
 
     pub fn verify_secret(secret: &[u8]) -> Result<(), Error> {

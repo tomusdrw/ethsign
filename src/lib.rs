@@ -2,13 +2,13 @@
 
 #![warn(missing_docs)]
 
-pub(crate) mod ec;
-
+mod ec;
 mod key;
 mod protected;
 
 pub mod keyfile;
 
+pub use self::ec::Error;
 pub use self::key::{PublicKey, SecretKey, Signature};
 pub use self::protected::Protected;
 
