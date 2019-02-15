@@ -3,7 +3,7 @@
 use std::num::NonZeroU32;
 use parity_crypto::Keccak256;
 use crate::Protected;
-use crate::key::Error;
+use crate::error::Error;
 
 use serde::{Serialize, Deserialize};
 use rand::{thread_rng, RngCore};

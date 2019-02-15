@@ -2,12 +2,13 @@
 
 #![warn(missing_docs)]
 
+mod error;
 mod ec;
 mod key;
 mod protected;
 
 pub mod keyfile;
 
-pub use self::ec::Error;
+pub use self::error::Error;
 pub use self::key::{PublicKey, SecretKey, Signature};
 pub use self::protected::Protected;

@@ -54,10 +54,8 @@ mod secp256k1 {
 #[cfg(not(feature = "secp256k1-c"))]
 #[cfg(feature = "secp256k1-rs")]
 mod secp256k1 {
-    use std::fmt;
-
-    /// Wrapper type around `libsecp256k1::Error`
-    pub struct Error(libsecp256k1::Error);
+    /// Alias type for `libsecp256k1::Error`
+    pub type Error = libsecp256k1::Error;
 
     pub fn verify_secret(secret: &[u8]) -> Result<(), Error> {
         libsecp256k1::SecretKey::parse_slice(secret)?;
@@ -99,23 +97,5 @@ mod secp256k1 {
         let pubkey = libsecp256k1::recover(&msg, &sig, &rec_id)?;
         
         Ok(pubkey.serialize())
-    }
-
-    impl From<libsecp256k1::Error> for Error {
-        fn from(err: libsecp256k1::Error) -> Error {
-            Error(err)
-        }
-    }
-
-    impl fmt::Debug for Error {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            fmt::Debug::fmt(&self.0, f)
-        }
-    }
-
-    impl fmt::Display for Error {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            fmt::Debug::fmt(&self.0, f)
-        }
     }
 }

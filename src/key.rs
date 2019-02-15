@@ -3,6 +3,7 @@ use std::fmt;
 use crate::ec;
 use crate::keyfile::KeyFile;
 use crate::protected::Protected;
+use crate::error::Error;
 use rustc_hex::ToHex;
 
 /// Message signature
@@ -86,29 +87,6 @@ pub struct SecretKey {
     secret: Protected,
 }
 
-/// Key error
-#[derive(Debug)]
-pub enum Error {
-    /// Invalid password for the keyfile
-    InvalidPassword,
-    /// Crypto error
-    Crypto(parity_crypto::Error),
-    /// Secp256k1 error
-    Secp256k1(ec::Error),
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match *self {
-            Error::InvalidPassword => write!(fmt, "Invalid Password"),
-            Error::Crypto(ref e) => write!(fmt, "Crypto: {}", e),
-            Error::Secp256k1(ref e) => write!(fmt, "Secp256k1: {}", e),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
-
 impl SecretKey {
     /// Convert a raw bytes secret into Key
     pub fn from_raw(slice: &[u8]) -> Result<Self, ec::Error> {
@@ -146,11 +124,6 @@ impl SecretKey {
         s.copy_from_slice(&data[32..64]);
 
         Ok(Signature { v, r, s })
-    }
-
-    /// Get the underlying 32 byte slice of the secret key
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.secret.0
     }
 }
 
