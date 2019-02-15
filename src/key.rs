@@ -94,7 +94,7 @@ impl SecretKey {
         ec::verify_secret(slice)?;
 
         Ok(Self {
-            secret: Protected(slice.to_vec()),
+            secret: Protected(slice.to_vec().into()),
         })
     }
 
