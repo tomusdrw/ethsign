@@ -101,7 +101,7 @@ impl Crypto {
         // two parts of derived key
         // DK = [ DK[0..15] DK[16..31] ] = [derived_left_bits, derived_right_bits]
         let (derived_left_bits, derived_right_bits) =
-            parity_crypto::derive_key_iterations(&password.0, &salt, iterations);
+            parity_crypto::derive_key_iterations(password.as_ref(), &salt, iterations);
 
         // preallocated buffer to hold cipher
         // length = length(plain) as we are using CTR-approach
@@ -135,7 +135,7 @@ impl Crypto {
     /// Decrypt into plain data
     pub fn decrypt(&self, password: &Protected) -> Result<Vec<u8>, Error> {
         let (left_bits, right_bits) = parity_crypto::derive_key_iterations(
-            &password.0,
+            password.as_ref(),
             &self.kdfparams.salt.0,
             self.kdfparams.c,
         );
@@ -215,7 +215,7 @@ mod tests {
     #[test]
     fn decrypt_encrypt() {
         let data = &b"It was the year they finally immanentized the Eschaton."[..];
-        let password = Protected(b"discord".to_vec());
+        let password = Protected::new(b"discord".to_vec());
 
         let crypto = Crypto::encrypt(data, &password, NonZeroU32::new(10240).unwrap()).unwrap();
         let decrypted = crypto.decrypt(&password).unwrap();
