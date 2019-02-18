@@ -94,7 +94,7 @@ impl SecretKey {
         ec::verify_secret(slice)?;
 
         Ok(Self {
-            secret: Protected(slice.to_vec()),
+            secret: Protected::new(slice.to_vec()),
         })
     }
 
@@ -107,7 +107,7 @@ impl SecretKey {
 
     /// Public key
     pub fn public(&self) -> PublicKey {
-        let uncompressed = ec::secret_to_public(&self.secret.0)
+        let uncompressed = ec::secret_to_public(self.secret.as_ref())
             .expect("The key is validated in the constructor; qed");
 
         PublicKey::from_slice(&uncompressed[1..])
@@ -116,7 +116,7 @@ impl SecretKey {
 
     /// Sign given 32-byte message with the key.
     pub fn sign(&self, message: &[u8]) -> Result<Signature, ec::Error> {
-        let (v, data) = ec::sign(&self.secret.0, message)?;
+        let (v, data) = ec::sign(self.secret.as_ref(), message)?;
 
         let mut r = [0u8; 32];
         r.copy_from_slice(&data[0..32]);
@@ -136,7 +136,7 @@ mod tests {
     fn should_read_keyfile() {
         let keyfile: KeyFile = serde_json::from_str(include_str!("../res/wallet.json")).unwrap();
         let password = b"";
-        let key = SecretKey::from_keyfile(&keyfile, &Protected(password.to_vec())).unwrap();
+        let key = SecretKey::from_keyfile(&keyfile, &Protected::new(password.to_vec())).unwrap();
         let pub_key = key.public();
 
         assert_eq!(pub_key.address().to_hex::<String>(), "005b3bcf82085eededd551f50de7892471ffb272");
