@@ -1,7 +1,8 @@
 use std::fmt;
+use std::num::NonZeroU32;
 
 use crate::ec;
-use crate::keyfile::KeyFile;
+use crate::keyfile::{KeyFile, Crypto, Bytes};
 use crate::protected::Protected;
 use crate::error::Error;
 use rustc_hex::ToHex;
@@ -105,6 +106,16 @@ impl SecretKey {
         Self::from_raw(&plain).map_err(Error::Secp256k1)
     }
 
+    /// Convert an Ethereum Key into keyfile
+    pub fn to_keyfile(&self, id: String, password: &Protected, iterations: NonZeroU32) -> Result<KeyFile, Error> {
+        Ok(KeyFile {
+            id,
+            version: 3,
+            crypto: Crypto::encrypt(self.secret.as_ref(), password, iterations)?,
+            address: Some(Bytes(self.public().address.to_vec()))
+        })
+    }
+
     /// Public key
     pub fn public(&self) -> PublicKey {
         let uncompressed = ec::secret_to_public(self.secret.as_ref())
@@ -141,6 +152,24 @@ mod tests {
 
         assert_eq!(pub_key.address().to_hex::<String>(), "005b3bcf82085eededd551f50de7892471ffb272");
         assert_eq!(&pub_key.bytes().to_hex::<String>(), "782cc7dd72426893ae0d71477e41c41b03249a2b72e78eefcfe0baa9df604a8f979ab94cd23d872dac7bfa8d07d8b76b26efcbede7079f1c5cacd88fe9858f6e");
+    }
+
+    #[test]
+    fn should_ser_de_keyfile() {
+        // given
+        let secret: Vec<u8> = "43cd5154df157a4ec26e3a04f9db252280e0c840b6a209026accb70dc124328c".from_hex().unwrap();
+        let key = SecretKey::from_raw(&secret).unwrap();
+        let password = Protected::new(b"".to_vec());
+
+        // when
+        let key_file = key.to_keyfile("".into(), &password, NonZeroU32::new(10240).unwrap()).unwrap();
+        let key_file_str = serde_json::to_string(&key_file).unwrap();
+        let key_file2: KeyFile = serde_json::from_str(&key_file_str).unwrap();
+        let key2 = SecretKey::from_keyfile(&key_file2, &password).unwrap();
+
+        // then
+        assert_eq!(key2.secret.as_ref(), key.secret.as_ref());
+        assert_eq!(key2.public().address().to_hex::<String>(), "005b3bcf82085eededd551f50de7892471ffb272");
     }
 
     #[test]
