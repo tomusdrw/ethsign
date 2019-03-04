@@ -66,7 +66,6 @@ mod secp256k1 {
         match SECP256K1.verify(&msg, &sig, &to_pubkey(public)?) {
             Ok(_) => Ok(true),
             Err(Error::IncorrectSignature) => Ok(false),
-            Err(Error::InvalidPublicKey) => Ok(false),
             Err(e) => Err(e)
         }
     }
