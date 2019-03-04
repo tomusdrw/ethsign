@@ -1,7 +1,10 @@
-use std::fmt;
+use std::{
+    fmt,
+    num::NonZeroU32,
+};
 
 use crate::ec;
-use crate::keyfile::KeyFile;
+use crate::keyfile::Crypto;
 use crate::protected::Protected;
 use crate::error::Error;
 use rustc_hex::ToHex;
@@ -98,11 +101,16 @@ impl SecretKey {
         })
     }
 
-    /// Convert a keyfile into Ethereum Key
-    pub fn from_keyfile(keyfile: &KeyFile, password: &Protected) -> Result<Self, Error> {
-        let plain = keyfile.crypto.decrypt(password)?;
+    /// Convert a keyfile crypto into Ethereum Key
+    pub fn from_crypto(crypto: &Crypto, password: &Protected) -> Result<Self, Error> {
+        let plain = crypto.decrypt(password)?;
 
         Self::from_raw(&plain).map_err(Error::Secp256k1)
+    }
+
+    /// Encrypt this secret key into Crypto object.
+    pub fn to_crypto(&self, password: &Protected, iterations: NonZeroU32) -> Result<Crypto, Error> {
+        Crypto::encrypt(self.secret.as_ref(), password, iterations)
     }
 
     /// Public key
@@ -130,13 +138,14 @@ impl SecretKey {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::keyfile::KeyFile;
     use rustc_hex::{FromHex, ToHex};
 
     #[test]
     fn should_read_keyfile() {
         let keyfile: KeyFile = serde_json::from_str(include_str!("../res/wallet.json")).unwrap();
         let password = b"";
-        let key = SecretKey::from_keyfile(&keyfile, &Protected::new(password.to_vec())).unwrap();
+        let key = SecretKey::from_crypto(&keyfile.crypto, &Protected::new(password.to_vec())).unwrap();
         let pub_key = key.public();
 
         assert_eq!(pub_key.address().to_hex::<String>(), "005b3bcf82085eededd551f50de7892471ffb272");
@@ -181,5 +190,18 @@ mod tests {
 
         let pub_key = signature.recover(&message).unwrap();
         assert_eq!(format!("{:?}", pub_key), "PublicKey { address: \"00af8b5cc1f8d0e862b4f303c0fa59b3709c2bb3\", public: \"929acaa0a4a4246225162496cc18e50719bb057519a150a94cfef77ae5e0dd50786c54cfe05f564d2ef09aae0b587bf73b83f45636def775bbf9010dded0e235\" }");
+    }
+
+    #[test]
+    fn should_convert_to_crypto_and_back() {
+        let secret: Vec<u8> = "4d5db4107d237df6a3d58ee5f70ae63d73d7658d4026f2eefd2f204c81682cb7".from_hex().unwrap();
+        let key = SecretKey::from_raw(&secret).unwrap();
+
+        let pass = "hunter2".into();
+        let crypto = key.to_crypto(&pass, NonZeroU32::new(4096).unwrap()).unwrap();
+        let key2 = SecretKey::from_crypto(&crypto, &pass).unwrap();
+
+
+        assert_eq!(key.public().bytes().as_ref(), key2.public().bytes().as_ref());
     }
 }
