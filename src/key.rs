@@ -81,6 +81,12 @@ impl PublicKey {
     pub fn address(&self) -> &[u8; 20] {
         &self.address
     }
+
+    /// Checks ECDSA validity of `signature` for `message` with this public key.
+    /// Returns `Ok(true)` on success.
+    pub fn verify(&self, signature: &Signature, message: &[u8]) -> Result<bool, ec::Error> {
+        ec::verify(&self.public, signature.v, &signature.r, &signature.s, message)
+    }
 }
 
 /// Represents the private part of the Ethereum key
@@ -203,5 +209,36 @@ mod tests {
 
 
         assert_eq!(key.public().bytes().as_ref(), key2.public().bytes().as_ref());
+    }
+
+    #[test]
+    fn test_sign_verify() {
+        // given
+        let secret: Vec<u8> = "4d5db4107d237df6a3d58ee5f70ae63d73d7658d4026f2eefd2f204c81682cb7".from_hex().unwrap();
+        let key = SecretKey::from_raw(&secret).unwrap();
+        let message: Vec<u8> = "12da94d92a71f7692013002513e5bc4a3180344cfe3292e2b54c15f9d4421965".from_hex().unwrap();
+
+        // when
+        let sig = key.sign(&message).unwrap();
+
+        // then
+        assert!(key.public().verify(&sig, &message).unwrap());
+    }
+
+    #[test]
+    fn test_sign_verify_fail_for_other_key() {
+        // given
+        let secret: Vec<u8> = "4d5db4107d237df6a3d58ee5f70ae63d73d7658d4026f2eefd2f204c81682cb7".from_hex().unwrap();
+        let key = SecretKey::from_raw(&secret).unwrap();
+        let other_secret: Vec<u8> = "2222222222222222222222222222222222222222222222222222222222222222".from_hex().unwrap();
+        let other_key = SecretKey::from_raw(&other_secret).unwrap();
+        let message: Vec<u8> = "12da94d92a71f7692013002513e5bc4a3180344cfe3292e2b54c15f9d4421965".from_hex().unwrap();
+
+        // when
+        let sig = key.sign(&message).unwrap();
+
+        // then
+        assert!(key.public().verify(&sig, &message).unwrap());
+        assert!(!other_key.public().verify(&sig, &message).unwrap());
     }
 }
