@@ -5,10 +5,6 @@ mod secp256k1 {
     /// `secp256k1::Error`
     pub use secp256k1::Error;
 
-    lazy_static::lazy_static! {
-    	pub static ref SECP256K1: secp256k1::Secp256k1<secp256k1::All> = secp256k1::Secp256k1::new();
-    }
-
     pub fn verify_secret(secret: &[u8]) -> Result<(), Error> {
         secp256k1::SecretKey::from_slice(secret)?;
         Ok(())
@@ -16,7 +12,8 @@ mod secp256k1 {
 
     pub fn secret_to_public(secret: &[u8]) -> Result<[u8; 65], Error> {
         let sec = secp256k1::SecretKey::from_slice(secret)?;
-        let pubkey = secp256k1::PublicKey::from_secret_key(&SECP256K1, &sec);
+        let context = secp256k1::Secp256k1::new();
+        let pubkey = secp256k1::PublicKey::from_secret_key(&context, &sec);
 
         Ok(pubkey.serialize_uncompressed())
     }
@@ -25,7 +22,7 @@ mod secp256k1 {
     pub fn sign(secret: &[u8], message: &[u8]) -> Result<(u8, [u8; 64]), Error> {
         let sec = secp256k1::SecretKey::from_slice(secret)?;
         let msg = secp256k1::Message::from_slice(message)?;
-        let sig = SECP256K1.sign_recoverable(&msg, &sec);
+        let sig = secp256k1::Secp256k1::new().sign_recoverable(&msg, &sec);
 
         let (rec_id, data) = sig.serialize_compact();
 
@@ -46,7 +43,7 @@ mod secp256k1 {
     pub fn recover(v: u8, r: &[u8; 32], s: &[u8; 32], message: &[u8]) -> Result<[u8; 65], Error> {
         let sig = to_recoverable_signature(v, r, s)?;
         let msg = secp256k1::Message::from_slice(message)?;
-        let pubkey = SECP256K1.recover(&msg, &sig)?;
+        let pubkey = secp256k1::Secp256k1::new().recover(&msg, &sig)?;
 
         Ok(pubkey.serialize_uncompressed())
     }
@@ -63,7 +60,7 @@ mod secp256k1 {
         let sig = to_recoverable_signature(v, r, s)?.to_standard();
         let msg = secp256k1::Message::from_slice(message)?;
 
-        match SECP256K1.verify(&msg, &sig, &to_pubkey(public)?) {
+        match secp256k1::Secp256k1::new().verify(&msg, &sig, &to_pubkey(public)?) {
             Ok(_) => Ok(true),
             Err(Error::IncorrectSignature) => Ok(false),
             Err(e) => Err(e)

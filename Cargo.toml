@@ -10,7 +10,6 @@ repository = "https://github.com/tomusdrw/ethsign"
 version = "0.4.0"
 
 [dependencies]
-lazy_static = "1.0"
 libsecp256k1 = { package = "libsecp256k1", version = "0.2.2", optional = true }
 memzero = "0.1"
 parity-crypto = "0.3"
