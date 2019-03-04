@@ -1,13 +1,13 @@
-use std::fmt;
+use std::{
+    fmt,
+    num::NonZeroU32,
+};
 
-use crate::keyfile::KeyFile;
+use crate::ec;
+use crate::keyfile::Crypto;
 use crate::protected::Protected;
-use parity_crypto::Keccak256;
+use crate::error::Error;
 use rustc_hex::ToHex;
-
-lazy_static::lazy_static! {
-	pub static ref SECP256K1: secp256k1::Secp256k1<secp256k1::All> = secp256k1::Secp256k1::new();
-}
 
 /// Message signature
 #[derive(PartialEq, Eq)]
@@ -32,23 +32,10 @@ impl fmt::Debug for Signature {
 
 impl Signature {
     /// Recover the signer of the message.
-    pub fn recoverable_signature(&self) -> Result<secp256k1::RecoverableSignature, secp256k1::Error> {
-        use secp256k1::{RecoverableSignature, RecoveryId};
-        let mut data = [0u8; 64];
-        data[0..32].copy_from_slice(&self.r);
-        data[32..64].copy_from_slice(&self.s);
+    pub fn recover(&self, message: &[u8]) -> Result<PublicKey, ec::Error> {
+        let uncompressed = ec::recover(self.v, &self.r, &self.s, message)?;
 
-        RecoverableSignature::from_compact(&data, RecoveryId::from_i32(self.v as i32)?)
-    }
-
-    /// Recover the signer of the message.
-    pub fn recover(&self, message: &[u8]) -> Result<PublicKey, secp256k1::Error> {
-        use secp256k1::Message;
-        let sig = self.recoverable_signature()?;
-        let pubkey = SECP256K1.recover(&Message::from_slice(message)?, &sig)?;
-        let public = pubkey.serialize_uncompressed();
-
-        Ok(PublicKey::from_slice(&public).expect("The length is correct; qed"))
+        Ok(PublicKey::from_slice(&uncompressed[1..]).expect("The length is correct; qed"))
     }
 }
 
@@ -95,25 +82,10 @@ impl PublicKey {
         &self.address
     }
 
-    /// Checks if given `signature` is a valid ECDSA signature for `message` using the this public key.
+    /// Checks ECDSA validity of `signature` for `message` with this public key.
     /// Returns `Ok(true)` on success.
-    pub fn verify(self, signature: &Signature, message: &[u8]) -> Result<bool, secp256k1::Error> {
-        use secp256k1::{Message, PublicKey};
-        let sig = signature.recoverable_signature()?.to_standard();
-
-        let pdata: [u8; 65] = {
-            let mut temp = [4u8; 65];
-            temp[1..65].copy_from_slice(&self.public);
-            temp
-        };
-
-        let publ = PublicKey::from_slice(&pdata)?;
-
-        match SECP256K1.verify(&Message::from_slice(&message)?, &sig, &publ) {
-            Ok(_) => Ok(true),
-            Err(secp256k1::Error::IncorrectSignature) => Ok(false),
-            Err(x) => Err(secp256k1::Error::from(x))
-        }
+    pub fn verify(self, signature: &Signature, message: &[u8]) -> Result<bool, ec::Error> {
+        ec::verify(&self.public, signature.v, &signature.r, &signature.s, message)
     }
 }
 
@@ -124,86 +96,42 @@ pub struct SecretKey {
     secret: Protected,
 }
 
-/// Key error
-#[derive(Debug)]
-pub enum Error {
-    /// Invalid password for the keyfile
-    InvalidPassword,
-    /// Crypto error
-    Crypto(parity_crypto::Error),
-    /// Secp256k1 error
-    Secp256k1(secp256k1::Error),
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match *self {
-            Error::InvalidPassword => write!(fmt, "Invalid Password"),
-            Error::Crypto(ref e) => write!(fmt, "Crypto: {}", e),
-            Error::Secp256k1(ref e) => write!(fmt, "Secp256k1: {}", e),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
-
 impl SecretKey {
     /// Convert a raw bytes secret into Key
-    pub fn from_raw(slice: &[u8]) -> Result<Self, secp256k1::Error> {
+    pub fn from_raw(slice: &[u8]) -> Result<Self, ec::Error> {
         // verify correctness
-        secp256k1::SecretKey::from_slice(slice)?;
+        ec::verify_secret(slice)?;
 
         Ok(Self {
-            secret: Protected(slice.to_vec()),
+            secret: Protected::new(slice.to_vec()),
         })
     }
 
-    /// Convert a keyfile into Ethereum Key
-    pub fn from_keyfile(keyfile: KeyFile, password: &Protected) -> Result<Self, Error> {
-        let crypto = keyfile.crypto;
-        let (left_bits, right_bits) = parity_crypto::derive_key_iterations(
-            &password.0,
-            &crypto.kdfparams.salt.0,
-            crypto.kdfparams.c,
-        );
-
-		let mac = parity_crypto::derive_mac(&right_bits, &crypto.ciphertext.0).keccak256();
-
-		if !parity_crypto::is_equal(&mac, &crypto.mac.0) {
-			return Err(Error::InvalidPassword);
-		}
-
-        let mut plain = Vec::new();
-        plain.resize(crypto.ciphertext.0.len(), 0);
-        parity_crypto::aes::decrypt_128_ctr(
-            &left_bits,
-            &crypto.cipherparams.iv.0,
-            &crypto.ciphertext.0,
-            &mut plain,
-        ).map_err(parity_crypto::Error::from).map_err(Error::Crypto)?;
+    /// Convert a keyfile crypto into Ethereum Key
+    pub fn from_crypto(crypto: &Crypto, password: &Protected) -> Result<Self, Error> {
+        let plain = crypto.decrypt(password)?;
 
         Self::from_raw(&plain).map_err(Error::Secp256k1)
     }
 
+    /// Encrypt this secret key into Crypto object.
+    pub fn to_crypto(&self, password: &Protected, iterations: NonZeroU32) -> Result<Crypto, Error> {
+        Crypto::encrypt(self.secret.as_ref(), password, iterations)
+    }
+
     /// Public key
     pub fn public(&self) -> PublicKey {
-        use secp256k1::{SecretKey};
-        let sec = SecretKey::from_slice(&self.secret.0)
+        let uncompressed = ec::secret_to_public(self.secret.as_ref())
             .expect("The key is validated in the constructor; qed");
 
-        let pubkey = secp256k1::PublicKey::from_secret_key(&SECP256K1, &sec);
-        
-        PublicKey::from_slice(&pubkey.serialize_uncompressed()[1..])
+        PublicKey::from_slice(&uncompressed[1..])
             .expect("The length of the key is correct; qed")
     }
 
-    /// Sign given 32-byte `message` with the key.
-    pub fn sign(&self, message: &[u8]) -> Result<Signature, secp256k1::Error> {
-        use secp256k1::{SecretKey, Message};
-        let sec = SecretKey::from_slice(&self.secret.0)?;
-        let sig = SECP256K1.sign_recoverable(&Message::from_slice(message)?, &sec);
-        let (rec_id, data) = sig.serialize_compact();
-        let v = rec_id.to_i32() as u8;
+    /// Sign given 32-byte message with the key.
+    pub fn sign(&self, message: &[u8]) -> Result<Signature, ec::Error> {
+        let (v, data) = ec::sign(self.secret.as_ref(), message)?;
+
         let mut r = [0u8; 32];
         r.copy_from_slice(&data[0..32]);
         let mut s = [0u8; 32];
@@ -216,13 +144,14 @@ impl SecretKey {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::keyfile::KeyFile;
     use rustc_hex::{FromHex, ToHex};
 
     #[test]
     fn should_read_keyfile() {
         let keyfile: KeyFile = serde_json::from_str(include_str!("../res/wallet.json")).unwrap();
         let password = b"";
-        let key = SecretKey::from_keyfile(keyfile, &Protected(password.to_vec())).unwrap();
+        let key = SecretKey::from_crypto(&keyfile.crypto, &Protected::new(password.to_vec())).unwrap();
         let pub_key = key.public();
 
         assert_eq!(pub_key.address().to_hex::<String>(), "005b3bcf82085eededd551f50de7892471ffb272");
@@ -253,30 +182,63 @@ mod tests {
     }
 
     #[test]
+    fn should_recover_succesfuly() {
+        let v = 0u8;
+        let r2: Vec<u8> = "319a63079d7cdd4e1ec99996f840253c1b0e41a4caf474602c43e83b5a8de183".from_hex().unwrap();
+        let s2: Vec<u8> = "2e9424ac2ba94abc12a79349888545f26958c2fccc28d91f6dee72ab9c069738".from_hex().unwrap();
+        let mut s = [0u8; 32];
+        s.copy_from_slice(&s2);
+        let mut r = [0u8; 32];
+        r.copy_from_slice(&r2);
+
+        let signature = Signature { v, s, r };
+        let message: Vec<u8> = "044a19199dc40e61210715bea94bcb0fff4c8dfa1c20988ab7783fc82c802a9f".from_hex().unwrap();
+
+        let pub_key = signature.recover(&message).unwrap();
+        assert_eq!(format!("{:?}", pub_key), "PublicKey { address: \"00af8b5cc1f8d0e862b4f303c0fa59b3709c2bb3\", public: \"929acaa0a4a4246225162496cc18e50719bb057519a150a94cfef77ae5e0dd50786c54cfe05f564d2ef09aae0b587bf73b83f45636def775bbf9010dded0e235\" }");
+    }
+
+    #[test]
+    fn should_convert_to_crypto_and_back() {
+        let secret: Vec<u8> = "4d5db4107d237df6a3d58ee5f70ae63d73d7658d4026f2eefd2f204c81682cb7".from_hex().unwrap();
+        let key = SecretKey::from_raw(&secret).unwrap();
+
+        let pass = "hunter2".into();
+        let crypto = key.to_crypto(&pass, NonZeroU32::new(4096).unwrap()).unwrap();
+        let key2 = SecretKey::from_crypto(&crypto, &pass).unwrap();
+
+
+        assert_eq!(key.public().bytes().as_ref(), key2.public().bytes().as_ref());
+    }
+
+    #[test]
     fn test_sign_verify() {
         // given
-        let key = SecretKey::from_raw(&rand::random::<[u8; 32]>()).unwrap();
-        let msg = rand::random::<[u8; 32]>();
+        let secret: Vec<u8> = "4d5db4107d237df6a3d58ee5f70ae63d73d7658d4026f2eefd2f204c81682cb7".from_hex().unwrap();
+        let key = SecretKey::from_raw(&secret).unwrap();
+        let message: Vec<u8> = "12da94d92a71f7692013002513e5bc4a3180344cfe3292e2b54c15f9d4421965".from_hex().unwrap();
 
         // when
-        let sig = key.sign(&msg);
+        let sig = key.sign(&message).unwrap();
 
         // then
-        assert!(key.public().verify(&sig.unwrap(), &msg).unwrap());
+        assert!(key.public().verify(&sig, &message).unwrap());
     }
 
     #[test]
     fn test_sign_verify_fail_for_other_key() {
         // given
-        let key = SecretKey::from_raw(&rand::random::<[u8; 32]>()).unwrap();
-        let other_key = SecretKey::from_raw(&rand::random::<[u8; 32]>()).unwrap();
-        let msg = rand::random::<[u8; 32]>();
+        let secret: Vec<u8> = "4d5db4107d237df6a3d58ee5f70ae63d73d7658d4026f2eefd2f204c81682cb7".from_hex().unwrap();
+        let key = SecretKey::from_raw(&secret).unwrap();
+        let other_secret: Vec<u8> = "2222222222222222222222222222222222222222222222222222222222222222".from_hex().unwrap();
+        let other_key = SecretKey::from_raw(&other_secret).unwrap();
+        let message: Vec<u8> = "12da94d92a71f7692013002513e5bc4a3180344cfe3292e2b54c15f9d4421965".from_hex().unwrap();
 
         // when
-        let sig = key.sign(&msg).unwrap();
+        let sig = key.sign(&message).unwrap();
 
         // then
-        assert!(key.public().verify(&sig, &msg).unwrap());
-        assert!(!other_key.public().verify(&sig, &msg).unwrap());
+        assert!(key.public().verify(&sig, &message).unwrap());
+        assert!(!other_key.public().verify(&sig, &message).unwrap());
     }
 }
