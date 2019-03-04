@@ -84,7 +84,7 @@ impl PublicKey {
 
     /// Checks ECDSA validity of `signature` for `message` with this public key.
     /// Returns `Ok(true)` on success.
-    pub fn verify(self, signature: &Signature, message: &[u8]) -> Result<bool, ec::Error> {
+    pub fn verify(&self, signature: &Signature, message: &[u8]) -> Result<bool, ec::Error> {
         ec::verify(&self.public, signature.v, &signature.r, &signature.s, message)
     }
 }
