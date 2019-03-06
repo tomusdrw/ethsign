@@ -35,10 +35,9 @@ pub struct Crypto {
     pub cipherparams: Aes128Ctr,
     /// Cipher bytes
 	pub ciphertext: Bytes,
-    /// Key-derivation function
-	pub kdf: Kdf,
-    /// KDF params
-    pub kdfparams: Pbkdf2,
+    /// KDF
+    #[serde(flatten)]
+    pub kdf: Kdf,
     /// MAC
 	pub mac: Bytes,
 }
@@ -60,10 +59,12 @@ pub struct Aes128Ctr {
 
 /// Key-Derivation function
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", tag = "kdf", content = "kdfparams")]
 pub enum Kdf {
     /// Password-based KDF 2
-	Pbkdf2,
+	Pbkdf2(Pbkdf2),
+    /// Scrypt
+    Scrypt(Scrypt),
 }
 
 /// PBKDF2 params
@@ -77,6 +78,21 @@ pub struct Pbkdf2 {
 	pub prf: Prf,
     /// Salt
 	pub salt: Bytes,
+}
+
+/// Scrypt params
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Scrypt {
+    /// DKLen
+    pub dklen: u32,
+    /// P
+    pub p: u32,
+    /// N
+    pub n: u32,
+    /// R
+    pub r: u32,
+    /// Salt
+    pub salt: Bytes,
 }
 
 /// PRF
@@ -121,24 +137,35 @@ impl Crypto {
                 iv: Bytes(iv.to_vec()),
             },
             ciphertext,
-            kdf: Kdf::Pbkdf2,
-            kdfparams: Pbkdf2 {
+            kdf: Kdf::Pbkdf2(Pbkdf2 {
                 c: iterations,
                 dklen: parity_crypto::KEY_LENGTH as u32,
                 prf: Prf::HmacSha256,
                 salt: Bytes(salt.to_vec()),
-            },
+            }),
             mac: Bytes(mac.to_vec()),
         })
     }
 
     /// Decrypt into plain data
     pub fn decrypt(&self, password: &Protected) -> Result<Vec<u8>, Error> {
-        let (left_bits, right_bits) = parity_crypto::derive_key_iterations(
-            password.as_ref(),
-            &self.kdfparams.salt.0,
-            self.kdfparams.c,
-        );
+        let (left_bits, right_bits) = match self.kdf {
+            Kdf::Pbkdf2(ref params) =>
+                parity_crypto::derive_key_iterations(
+                    password.as_ref(),
+                    &params.salt.0,
+                    params.c,
+                ),
+            Kdf::Scrypt(ref params) =>
+                parity_crypto::scrypt::derive_key(
+                    password.as_ref(),
+                    &params.salt.0,
+                    params.n,
+                    params.p,
+                    params.r
+                ).map_err(Error::ScryptError)?
+        };
+
 
         let mac = parity_crypto::derive_mac(&right_bits, &self.ciphertext.0).keccak256();
 

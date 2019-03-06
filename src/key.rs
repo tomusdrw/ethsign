@@ -148,7 +148,7 @@ mod tests {
     use rustc_hex::{FromHex, ToHex};
 
     #[test]
-    fn should_read_keyfile() {
+    fn should_read_pbkdf_keyfile() {
         let keyfile: KeyFile = serde_json::from_str(include_str!("../res/wallet.json")).unwrap();
         let password = b"";
         let key = SecretKey::from_crypto(&keyfile.crypto, &Protected::new(password.to_vec())).unwrap();
@@ -156,6 +156,17 @@ mod tests {
 
         assert_eq!(pub_key.address().to_hex::<String>(), "005b3bcf82085eededd551f50de7892471ffb272");
         assert_eq!(&pub_key.bytes().to_hex::<String>(), "782cc7dd72426893ae0d71477e41c41b03249a2b72e78eefcfe0baa9df604a8f979ab94cd23d872dac7bfa8d07d8b76b26efcbede7079f1c5cacd88fe9858f6e");
+    }
+
+    #[test]
+    fn should_read_scrypt_keyfile() {
+        let keyfile: KeyFile = serde_json::from_str(include_str!("../res/scrypt-wallet.json")).unwrap();
+        let password = b"geth";
+        let key = SecretKey::from_crypto(&keyfile.crypto, &Protected::new(password.to_vec())).unwrap();
+        let pub_key = key.public();
+
+        assert_eq!(pub_key.address().to_hex::<String>(), "8e049da484e853d92d118be16377ff616275d470");
+        assert_eq!(&pub_key.bytes().to_hex::<String>(), "e54553168b429c0407c5e4338f0a61fa7a515ff382ada9f323e313353c1904b0d8039f99e213778ba479196ef24c838e41dc77215c41895fe15e4de018d7d1dd");
     }
 
     #[test]
