@@ -2,8 +2,8 @@
 
 #![warn(missing_docs)]
 
-mod error;
 mod ec;
+mod error;
 mod key;
 mod protected;
 

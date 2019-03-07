@@ -29,7 +29,7 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl From<ec::Error> for Error {
-	fn from(e: ec::Error) -> Error {
-		Error::Secp256k1(e)
-	}
+    fn from(e: ec::Error) -> Error {
+        Error::Secp256k1(e)
+    }
 }
