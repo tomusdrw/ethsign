@@ -9,6 +9,8 @@ pub enum Error {
     InvalidPassword,
     /// Crypto error
     Crypto(parity_crypto::Error),
+    /// Scrypt error
+    ScryptError(parity_crypto::error::ScryptError),
     /// Secp256k1 error
     Secp256k1(crate::ec::Error),
 }
@@ -18,6 +20,7 @@ impl std::fmt::Display for Error {
         match *self {
             Error::InvalidPassword => write!(fmt, "Invalid Password"),
             Error::Crypto(ref e) => write!(fmt, "Crypto: {}", e),
+            Error::ScryptError(ref e) => write!(fmt, "ScryptError: {}", e),
             Error::Secp256k1(ref e) => write!(fmt, "Secp256k1: {:?}", e),
         }
     }
@@ -26,7 +29,7 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl From<ec::Error> for Error {
-	fn from(e: ec::Error) -> Error {
-		Error::Secp256k1(e)
-	}
+    fn from(e: ec::Error) -> Error {
+        Error::Secp256k1(e)
+    }
 }

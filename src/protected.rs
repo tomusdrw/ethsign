@@ -3,7 +3,6 @@ use memzero::Memzero;
 /// A protected set of bytes.
 pub struct Protected(Memzero<Vec<u8>>);
 
-
 impl<T: Into<Vec<u8>>> From<T> for Protected {
     fn from(x: T) -> Self {
         Protected::new(x.into())
