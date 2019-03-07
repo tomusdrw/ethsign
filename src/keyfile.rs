@@ -62,7 +62,7 @@ pub struct Aes128Ctr {
 #[serde(rename_all = "camelCase", tag = "kdf", content = "kdfparams")]
 pub enum Kdf {
     /// Password-based KDF 2
-	Pbkdf2(Pbkdf2),
+    Pbkdf2(Pbkdf2),
     /// Scrypt
     Scrypt(Scrypt),
 }
