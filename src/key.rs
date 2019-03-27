@@ -4,6 +4,7 @@ use crate::ec;
 use crate::error::Error;
 use crate::keyfile::Crypto;
 use crate::protected::Protected;
+use crate::crypto::Keccak256;
 use rustc_hex::ToHex;
 
 /// Message signature
@@ -64,7 +65,7 @@ impl PublicKey {
         public.copy_from_slice(slice);
 
         let mut address = [0u8; 20];
-        address.copy_from_slice(&parity_crypto::Keccak256::keccak256(&&public[..])[12..]);
+        address.copy_from_slice(&(&public[..]).keccak256()[12..]);
 
         Ok(Self { public, address })
     }

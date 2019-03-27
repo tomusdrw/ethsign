@@ -1,13 +1,13 @@
 echo ""
-echo "Running with C implementation of secp256k1"
-echo "=========================================="
+echo "Running with default features"
+echo "============================="
 echo ""
 cargo build || exit
 cargo test || exit
 
 echo ""
-echo "Running with Rust implementation of secp256k1"
-echo "============================================="
+echo "Running with pure Rust dependencies"
+echo "==================================="
 echo ""
-cargo build --no-default-features --features secp256k1-rs || exit
-cargo test --no-default-features --features secp256k1-rs || exit
+cargo build --no-default-features --features pure-rust || exit
+cargo test --no-default-features --features pure-rust || exit
