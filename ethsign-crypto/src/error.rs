@@ -2,9 +2,12 @@ use std::fmt;
 pub use crate::aes::SymmError;
 pub use crate::scrypt::ScryptError;
 
+/// Generic Error type for the crate
 #[derive(Debug)]
 pub enum Error {
+    /// AES encryption error
     Aes(SymmError),
+    /// Scrypt encryption error
     Scrypt(ScryptError)
 }
 

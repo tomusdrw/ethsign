@@ -14,7 +14,9 @@ use tiny_keccak::Keccak;
 pub const KEY_LENGTH: usize = 32;
 pub const KEY_LENGTH_AES: usize = KEY_LENGTH / 2;
 
+/// Helper trait for conveniently hashing byte slices
 pub trait Keccak256<T: Sized> {
+    /// Hash self to a hash type `T`.
     fn keccak256(&self) -> T;
 }
 
@@ -49,6 +51,8 @@ pub fn derive_mac(derived_left_bits: &[u8], cipher_text: &[u8]) -> Vec<u8> {
     mac
 }
 
+/// Check if two slices are equal, this is equivalent to `a == b` and is only exposed here
+/// as a replacement for `parity-crypto` version which uses constant time compare from `ring`.
 pub fn is_equal(a: &[u8], b: &[u8]) -> bool {
     a == b
 }
