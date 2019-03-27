@@ -1,8 +1,8 @@
 //! JSON keyfile representation.
 
+use crate::crypto::{self, Keccak256};
 use crate::error::Error;
 use crate::Protected;
-use parity_crypto::Keccak256;
 use std::num::NonZeroU32;
 
 use rand::{thread_rng, RngCore};
@@ -121,7 +121,7 @@ impl Crypto {
         // two parts of derived key
         // DK = [ DK[0..15] DK[16..31] ] = [derived_left_bits, derived_right_bits]
         let (derived_left_bits, derived_right_bits) =
-            parity_crypto::derive_key_iterations(password.as_ref(), &salt, iterations);
+            crypto::derive_key_iterations(password.as_ref(), &salt, iterations);
 
         // preallocated buffer to hold cipher
         // length = length(plain) as we are using CTR-approach
@@ -129,12 +129,12 @@ impl Crypto {
         let mut ciphertext = Bytes(vec![0u8; plain_len]);
 
         // aes-128-ctr with initial vector of iv
-        parity_crypto::aes::encrypt_128_ctr(&derived_left_bits, &iv, plain, &mut *ciphertext.0)
-            .map_err(parity_crypto::Error::from)
+        crypto::aes::encrypt_128_ctr(&derived_left_bits, &iv, plain, &mut *ciphertext.0)
+            .map_err(crypto::Error::from)
             .map_err(Error::Crypto)?;
 
         // KECCAK(DK[16..31] ++ <ciphertext>), where DK[16..31] - derived_right_bits
-        let mac = parity_crypto::derive_mac(&derived_right_bits, &*ciphertext.0).keccak256();
+        let mac = crypto::derive_mac(&derived_right_bits, &*ciphertext.0).keccak256();
 
         Ok(Crypto {
             cipher: Cipher::Aes128Ctr,
@@ -144,7 +144,7 @@ impl Crypto {
             ciphertext,
             kdf: Kdf::Pbkdf2(Pbkdf2 {
                 c: iterations,
-                dklen: parity_crypto::KEY_LENGTH as u32,
+                dklen: crypto::KEY_LENGTH as u32,
                 prf: Prf::HmacSha256,
                 salt: Bytes(salt.to_vec()),
             }),
@@ -156,9 +156,9 @@ impl Crypto {
     pub fn decrypt(&self, password: &Protected) -> Result<Vec<u8>, Error> {
         let (left_bits, right_bits) = match self.kdf {
             Kdf::Pbkdf2(ref params) => {
-                parity_crypto::derive_key_iterations(password.as_ref(), &params.salt.0, params.c)
+                crypto::derive_key_iterations(password.as_ref(), &params.salt.0, params.c)
             }
-            Kdf::Scrypt(ref params) => parity_crypto::scrypt::derive_key(
+            Kdf::Scrypt(ref params) => crypto::scrypt::derive_key(
                 password.as_ref(),
                 &params.salt.0,
                 params.n,
@@ -168,21 +168,21 @@ impl Crypto {
             .map_err(Error::ScryptError)?,
         };
 
-        let mac = parity_crypto::derive_mac(&right_bits, &self.ciphertext.0).keccak256();
+        let mac = crypto::derive_mac(&right_bits, &self.ciphertext.0).keccak256();
 
-        if !parity_crypto::is_equal(&mac, &self.mac.0) {
+        if !crypto::is_equal(&mac, &self.mac.0) {
             return Err(Error::InvalidPassword);
         }
 
         let mut plain = Vec::new();
         plain.resize(self.ciphertext.0.len(), 0);
-        parity_crypto::aes::decrypt_128_ctr(
+        crypto::aes::decrypt_128_ctr(
             &left_bits,
             &self.cipherparams.iv.0,
             &self.ciphertext.0,
             &mut plain,
         )
-        .map_err(parity_crypto::Error::from)
+        .map_err(crypto::Error::from)
         .map_err(Error::Crypto)?;
 
         Ok(plain)

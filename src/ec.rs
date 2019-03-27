@@ -1,6 +1,6 @@
 pub use self::secp256k1::*;
 
-#[cfg(feature = "secp256k1-c")]
+#[cfg(not(feature = "pure-rust"))]
 mod secp256k1 {
     /// `secp256k1::Error`
     pub use secp256k1::Error;
@@ -78,8 +78,7 @@ mod secp256k1 {
     }
 }
 
-#[cfg(not(feature = "secp256k1-c"))]
-#[cfg(feature = "secp256k1-rs")]
+#[cfg(feature = "pure-rust")]
 mod secp256k1 {
     /// `libsecp256k1::Error`
     pub use libsecp256k1::Error;

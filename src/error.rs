@@ -8,9 +8,9 @@ pub enum Error {
     /// Invalid password for the keyfile
     InvalidPassword,
     /// Crypto error
-    Crypto(parity_crypto::Error),
+    Crypto(crate::crypto::Error),
     /// Scrypt error
-    ScryptError(parity_crypto::error::ScryptError),
+    ScryptError(crate::crypto::error::ScryptError),
     /// Secp256k1 error
     Secp256k1(crate::ec::Error),
 }
