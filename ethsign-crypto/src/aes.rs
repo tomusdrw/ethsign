@@ -1,15 +1,17 @@
+//! AES symmetric encryption
+
 use std::fmt;
 use aes_ctr::Aes128Ctr;
 use aes_ctr::stream_cipher::generic_array::GenericArray;
 use aes_ctr::stream_cipher::{NewStreamCipher, SyncStreamCipher};
 
+/// Error type for the AES symmetric encryption
 #[derive(Debug)]
 pub enum SymmError {
     InvalidKey,
     InvalidNonce,
     SourceDestinationMismatch,
 }
-
 
 impl fmt::Display for SymmError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

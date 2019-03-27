@@ -1,3 +1,5 @@
+//! Scrypt key derivation wrapper around the `scrypt` crate.
+
 use std::fmt;
 use scrypt::ScryptParams;
 

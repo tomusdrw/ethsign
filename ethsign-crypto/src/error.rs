@@ -1,3 +1,5 @@
+//! Error handling module
+
 use std::fmt;
 pub use crate::aes::SymmError;
 pub use crate::scrypt::ScryptError;
