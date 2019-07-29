@@ -18,4 +18,4 @@ aes-ctr = "0.3"
 tiny-keccak = "1.4.2"
 
 [dev-dependencies]
-parity-crypto = "0.3"
+parity-crypto = "0.4"
