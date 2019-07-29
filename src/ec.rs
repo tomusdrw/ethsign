@@ -12,7 +12,7 @@ mod secp256k1 {
 
     pub fn secret_to_public(secret: &[u8]) -> Result<[u8; 65], Error> {
         let sec = secp256k1::SecretKey::from_slice(secret)?;
-        let context = secp256k1::Secp256k1::new();
+        let context = secp256k1::Secp256k1::signing_only();
         let pubkey = secp256k1::PublicKey::from_secret_key(&context, &sec);
 
         Ok(pubkey.serialize_uncompressed())
@@ -22,7 +22,7 @@ mod secp256k1 {
     pub fn sign(secret: &[u8], message: &[u8]) -> Result<(u8, [u8; 64]), Error> {
         let sec = secp256k1::SecretKey::from_slice(secret)?;
         let msg = secp256k1::Message::from_slice(message)?;
-        let sig = secp256k1::Secp256k1::new().sign_recoverable(&msg, &sec);
+        let sig = secp256k1::Secp256k1::signing_only().sign_recoverable(&msg, &sec);
 
         let (rec_id, data) = sig.serialize_compact();
 
@@ -33,21 +33,21 @@ mod secp256k1 {
         v: u8,
         r: &[u8; 32],
         s: &[u8; 32],
-    ) -> Result<secp256k1::RecoverableSignature, Error> {
-        let rec_id = secp256k1::RecoveryId::from_i32(v as i32)?;
+    ) -> Result<secp256k1::recovery::RecoverableSignature, Error> {
+        let rec_id = secp256k1::recovery::RecoveryId::from_i32(v as i32)?;
 
         let mut data = [0u8; 64];
         data[0..32].copy_from_slice(r);
         data[32..64].copy_from_slice(s);
 
-        secp256k1::RecoverableSignature::from_compact(&data, rec_id)
+        secp256k1::recovery::RecoverableSignature::from_compact(&data, rec_id)
     }
 
     /// Recover the signer of the message.
     pub fn recover(v: u8, r: &[u8; 32], s: &[u8; 32], message: &[u8]) -> Result<[u8; 65], Error> {
         let sig = to_recoverable_signature(v, r, s)?;
         let msg = secp256k1::Message::from_slice(message)?;
-        let pubkey = secp256k1::Secp256k1::new().recover(&msg, &sig)?;
+        let pubkey = secp256k1::Secp256k1::verification_only().recover(&msg, &sig)?;
 
         Ok(pubkey.serialize_uncompressed())
     }
@@ -70,7 +70,7 @@ mod secp256k1 {
         let sig = to_recoverable_signature(v, r, s)?.to_standard();
         let msg = secp256k1::Message::from_slice(message)?;
 
-        match secp256k1::Secp256k1::new().verify(&msg, &sig, &to_pubkey(public)?) {
+        match secp256k1::Secp256k1::verification_only().verify(&msg, &sig, &to_pubkey(public)?) {
             Ok(_) => Ok(true),
             Err(Error::IncorrectSignature) => Ok(false),
             Err(e) => Err(e),
