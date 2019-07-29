@@ -3,7 +3,6 @@
 use crate::crypto::{self, Keccak256};
 use crate::error::Error;
 use crate::Protected;
-use std::num::NonZeroU32;
 
 use rand::{thread_rng, RngCore};
 use serde::{Deserialize, Serialize};
@@ -71,7 +70,7 @@ pub enum Kdf {
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Pbkdf2 {
     /// C
-    pub c: NonZeroU32,
+    pub c: u32,
     /// DKLen
     pub dklen: u32,
     /// Prf
@@ -108,7 +107,7 @@ impl Crypto {
     pub fn encrypt(
         plain: &[u8],
         password: &Protected,
-        iterations: NonZeroU32,
+        iterations: u32,
     ) -> Result<Self, Error> {
         let mut rng = thread_rng();
 
@@ -248,7 +247,7 @@ mod tests {
         let data = &b"It was the year they finally immanentized the Eschaton."[..];
         let password = Protected::new(b"discord".to_vec());
 
-        let crypto = Crypto::encrypt(data, &password, NonZeroU32::new(10240).unwrap()).unwrap();
+        let crypto = Crypto::encrypt(data, &password, 10240).unwrap();
         let decrypted = crypto.decrypt(&password).unwrap();
 
         assert_eq!(data, decrypted.as_slice());
