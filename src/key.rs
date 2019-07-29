@@ -1,4 +1,4 @@
-use std::{fmt, num::NonZeroU32};
+use std::fmt;
 
 use crate::ec;
 use crate::error::Error;
@@ -119,7 +119,7 @@ impl SecretKey {
     }
 
     /// Encrypt this secret key into Crypto object.
-    pub fn to_crypto(&self, password: &Protected, iterations: NonZeroU32) -> Result<Crypto, Error> {
+    pub fn to_crypto(&self, password: &Protected, iterations: u32) -> Result<Crypto, Error> {
         Crypto::encrypt(self.secret.as_ref(), password, iterations)
     }
 

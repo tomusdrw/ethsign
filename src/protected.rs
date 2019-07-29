@@ -1,11 +1,11 @@
-use memzero::Memzero;
+use zeroize::Zeroize;
 
 /// A protected set of bytes.
-pub struct Protected(Memzero<Vec<u8>>);
+pub struct Protected(Vec<u8>);
 
 impl<T: Into<Vec<u8>>> From<T> for Protected {
     fn from(x: T) -> Self {
-        Protected::new(x.into())
+        Protected::new(x)
     }
 }
 
@@ -18,7 +18,13 @@ impl AsRef<[u8]> for Protected {
 impl Protected {
     /// Create new protected set of bytes.
     pub fn new<T: Into<Vec<u8>>>(m: T) -> Self {
-        Protected(m.into().into())
+        Protected(m.into())
+    }
+}
+
+impl Drop for Protected {
+    fn drop(&mut self) {
+        self.0.zeroize();
     }
 }
 
