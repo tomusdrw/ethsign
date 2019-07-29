@@ -36,9 +36,9 @@ impl<T: AsRef<[u8]>> Keccak256<[u8; 32]> for T {
     }
 }
 
-pub fn derive_key_iterations(password: &[u8], salt: &[u8], c: std::num::NonZeroU32) -> (Vec<u8>, Vec<u8>) {
+pub fn derive_key_iterations(password: &[u8], salt: &[u8], c: u32) -> (Vec<u8>, Vec<u8>) {
     let mut derived_key = [0u8; KEY_LENGTH];
-    pbkdf2::<Hmac<Sha256>>(password, salt, c.get() as usize, &mut derived_key);
+    pbkdf2::<Hmac<Sha256>>(password, salt, c as usize, &mut derived_key);
     let derived_right_bits = &derived_key[0..KEY_LENGTH_AES];
     let derived_left_bits = &derived_key[KEY_LENGTH_AES..KEY_LENGTH];
     (derived_right_bits.to_vec(), derived_left_bits.to_vec())
@@ -63,7 +63,7 @@ mod test {
     fn derive_behaves_like_parity_crypto() {
         let password = b"amazing password";
         let salt = b"salty sailor";
-        let c = ::std::num::NonZeroU32::new(2048).unwrap();
+        let c = 2048;
 
         let rust_derive = super::derive_key_iterations(password, salt, c);
         let ring_derive = parity_crypto::derive_key_iterations(password, salt, c);
