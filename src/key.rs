@@ -246,7 +246,7 @@ mod tests {
 
         let pass = "hunter2".into();
         let crypto = key
-            .to_crypto(&pass, NonZeroU32::new(4096).unwrap())
+            .to_crypto(&pass, 4096)
             .unwrap();
         let key2 = SecretKey::from_crypto(&crypto, &pass).unwrap();
 

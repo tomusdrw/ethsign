@@ -247,7 +247,7 @@ mod tests {
         let data = &b"It was the year they finally immanentized the Eschaton."[..];
         let password = Protected::new(b"discord".to_vec());
 
-        let crypto = Crypto::encrypt(data, &password, NonZeroU32::new(10240).unwrap()).unwrap();
+        let crypto = Crypto::encrypt(data, &password, 10240).unwrap();
         let decrypted = crypto.decrypt(&password).unwrap();
 
         assert_eq!(data, decrypted.as_slice());
