@@ -2,7 +2,7 @@
 
 use crate::crypto::{self, Keccak256};
 use crate::error::Error;
-use crate::Protected;
+use crate::{SecretKey, Protected};
 
 use rand::{thread_rng, RngCore};
 use serde::{Deserialize, Serialize};
@@ -23,6 +23,13 @@ pub struct KeyFile {
     pub crypto: Crypto,
     /// Optional address
     pub address: Option<Bytes>,
+}
+
+impl KeyFile {
+    /// Attemp to convert the `KeyFile` into `SecretKey`.
+    pub fn to_secret_key(&self, password: &Protected) -> Result<SecretKey, Error> {
+        SecretKey::from_crypto(&self.crypto, password)
+    }
 }
 
 /// Encrypted secret
