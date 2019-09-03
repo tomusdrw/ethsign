@@ -1,6 +1,7 @@
 use zeroize::Zeroize;
 
 /// A protected set of bytes.
+#[derive(Clone)]
 pub struct Protected(Vec<u8>);
 
 impl<T: Into<Vec<u8>>> From<T> for Protected {
