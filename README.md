@@ -4,7 +4,7 @@ A library to read JSON keyfiles and sign Ethereum stuff.
 
 ## Usage:
 ```rust
-use ethsign::{Protected, keyfile::KeyFile};
+use ethsign::{Protected, KeyFile};
 
 fn main() {
     let file = std::fs::File::open("./res/wallet.json").unwrap();

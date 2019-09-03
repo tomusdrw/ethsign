@@ -2,7 +2,7 @@
 //!
 //! How to use it?
 //! ```rust
-//! use ethsign::{Protected, keyfile::KeyFile};
+//! use ethsign::{Protected, KeyFile};
 //!
 //! fn main() {
 //!     let file = std::fs::File::open("./res/wallet.json").unwrap();
@@ -44,4 +44,5 @@ pub mod keyfile;
 
 pub use self::error::Error;
 pub use self::key::{PublicKey, SecretKey, Signature};
+pub use self::keyfile::KeyFile;
 pub use self::protected::Protected;
