@@ -100,7 +100,7 @@ mod secp256k1 {
         let sec = libsecp256k1::SecretKey::parse_slice(secret)?;
         let msg = libsecp256k1::Message::parse_slice(message)?;
 
-        let (sig, rec_id) = libsecp256k1::sign(&msg, &sec)?;
+        let (sig, rec_id) = libsecp256k1::sign(&msg, &sec);
 
         Ok((rec_id.serialize(), sig.serialize()))
     }
