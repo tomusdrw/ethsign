@@ -7,7 +7,7 @@ homepage = "https://github.com/tomusdrw/ethsign"
 license = "GPL-3.0"
 name = "ethsign"
 repository = "https://github.com/tomusdrw/ethsign"
-version = "0.7.1"
+version = "0.7.2"
 
 [dependencies]
 zeroize = "0.10.0"
@@ -19,7 +19,7 @@ serde = { version = "1.0", features = ["derive"]}
 
 # Libraries for for pure-rust crypto
 libsecp256k1 = { package="libsecp256k1", version = "0.2.2", optional = true }
-ethsign-crypto = { version = "0.1", path = "./ethsign-crypto", optional = true }
+ethsign-crypto = { version = "0.2", path = "./ethsign-crypto", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0"
