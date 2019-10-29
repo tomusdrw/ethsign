@@ -23,7 +23,7 @@ impl fmt::Debug for Signature {
         fmt.debug_struct("Signature")
             .field("v", &self.v)
             .field("r", &ToHex::to_hex::<String>(&self.r[..]))
-            .field("s", &ToHex::to_hex::<String>(&self.r[..]))
+            .field("s", &ToHex::to_hex::<String>(&self.s[..]))
             .finish()
     }
 }
