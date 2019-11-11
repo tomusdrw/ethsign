@@ -9,7 +9,7 @@ pub use error::Error;
 use sha2::Sha256;
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
-use tiny_keccak::Keccak;
+use tiny_keccak::{Keccak, Hasher};
 
 pub const KEY_LENGTH: usize = 32;
 pub const KEY_LENGTH_AES: usize = KEY_LENGTH / 2;
@@ -22,7 +22,7 @@ pub trait Keccak256<T: Sized> {
 
 impl Keccak256<[u8; 32]> for [u8] {
     fn keccak256(&self) -> [u8; 32] {
-        let mut keccak = Keccak::new_keccak256();
+        let mut keccak = Keccak::v256();
         let mut result = [0u8; 32];
         keccak.update(self);
         keccak.finalize(&mut result);
