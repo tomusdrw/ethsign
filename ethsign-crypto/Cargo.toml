@@ -11,7 +11,7 @@ license = "GPL-3.0"
 
 [dependencies]
 pbkdf2 = { version = "0.4.0", features = [ "parallel" ], default-features = false }
-scrypt = "0.3.0"
+scrypt = "0.4.0"
 sha2 = "0.9.1"
 hmac = "0.8.1"
 aes-ctr = "0.4.0"
