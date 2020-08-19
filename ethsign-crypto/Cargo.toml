@@ -10,7 +10,7 @@ description = "Pure Rust drop-in replacement for the `parity-crypto` crate"
 license = "GPL-3.0"
 
 [dependencies]
-pbkdf2 = { version = "0.4.0", features = [ "parallel" ], default-features = false }
+pbkdf2 = { version = "0.5.0", features = [ "parallel" ], default-features = false }
 scrypt = "0.4.0"
 sha2 = "0.9.1"
 hmac = "0.9.0"
