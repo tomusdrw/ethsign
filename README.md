@@ -27,7 +27,7 @@ fn main() {
 }
 ```
 
-A higher-level lib `ethkey` facilitates managing key files and exposes `ethsign`: 
+A higher-level lib [`ethkey`](https://crates.io/crates/ethkey) facilitates managing key files and exposes `ethsign`: 
 
 ```toml
 [dependencies]
