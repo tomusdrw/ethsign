@@ -14,7 +14,7 @@ pbkdf2 = { version = "0.5.0", features = [ "parallel" ], default-features = fals
 scrypt = "0.5.0"
 sha2 = "0.9.1"
 hmac = "0.9.0"
-aes-ctr = "0.5.0"
+aes-ctr = "0.6.0"
 tiny-keccak = { version = "2.0.0", features = [ "keccak" ] }
 
 [dev-dependencies]
