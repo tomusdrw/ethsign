@@ -4,7 +4,7 @@ use scrypt::ScryptParams;
 
 pub use scrypt::errors::InvalidParams as ScryptError;
 
-use super::{KEY_LENGTH_AES, KEY_LENGTH};
+use super::{KEY_LENGTH, KEY_LENGTH_AES};
 
 pub fn derive_key(pass: &[u8], salt: &[u8], n: u32, p: u32, r: u32) -> Result<(Vec<u8>, Vec<u8>), ScryptError> {
     let log_n = (32 - n.leading_zeros() - 1) as u8;

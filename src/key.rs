@@ -1,10 +1,10 @@
 use std::fmt;
 
+use crate::crypto::Keccak256;
 use crate::ec;
 use crate::error::Error;
 use crate::keyfile::Crypto;
 use crate::protected::Protected;
-use crate::crypto::Keccak256;
 use rustc_hex::ToHex;
 
 /// Message signature
@@ -84,13 +84,7 @@ impl PublicKey {
     /// Checks ECDSA validity of `signature` for `message` with this public key.
     /// Returns `Ok(true)` on success.
     pub fn verify(&self, signature: &Signature, message: &[u8]) -> Result<bool, ec::Error> {
-        ec::verify(
-            &self.public,
-            signature.v,
-            &signature.r,
-            &signature.s,
-            message,
-        )
+        ec::verify(&self.public, signature.v, &signature.r, &signature.s, message)
     }
 }
 
@@ -126,8 +120,8 @@ impl SecretKey {
 
     /// Public key
     pub fn public(&self) -> PublicKey {
-        let uncompressed = ec::secret_to_public(self.secret.as_ref())
-            .expect("The key is validated in the constructor; qed");
+        let uncompressed =
+            ec::secret_to_public(self.secret.as_ref()).expect("The key is validated in the constructor; qed");
 
         PublicKey::from_slice(&uncompressed[1..]).expect("The length of the key is correct; qed")
     }
@@ -155,8 +149,7 @@ mod tests {
     fn should_read_pbkdf_keyfile() {
         let keyfile: KeyFile = serde_json::from_str(include_str!("../res/wallet.json")).unwrap();
         let password = b"";
-        let key =
-            SecretKey::from_crypto(&keyfile.crypto, &Protected::new(password.to_vec())).unwrap();
+        let key = SecretKey::from_crypto(&keyfile.crypto, &Protected::new(password.to_vec())).unwrap();
         let pub_key = key.public();
 
         assert_eq!(
@@ -168,11 +161,9 @@ mod tests {
 
     #[test]
     fn should_read_scrypt_keyfile() {
-        let keyfile: KeyFile =
-            serde_json::from_str(include_str!("../res/scrypt-wallet.json")).unwrap();
+        let keyfile: KeyFile = serde_json::from_str(include_str!("../res/scrypt-wallet.json")).unwrap();
         let password = b"geth";
-        let key =
-            SecretKey::from_crypto(&keyfile.crypto, &Protected::new(password.to_vec())).unwrap();
+        let key = SecretKey::from_crypto(&keyfile.crypto, &Protected::new(password.to_vec())).unwrap();
         let pub_key = key.public();
 
         assert_eq!(
@@ -207,10 +198,7 @@ mod tests {
         let pub_key = key.public();
         let signature = key.sign(&secret).unwrap();
 
-        assert_eq!(
-            format!("{:?}", key),
-            "SecretKey { secret: Protected(77..183) }"
-        );
+        assert_eq!(format!("{:?}", key), "SecretKey { secret: Protected(77..183) }");
         assert_eq!(format!("{:?}", pub_key), "PublicKey { address: \"00a329c0648769a73afac7f9381e08fb43dbea72\", public: \"3fa8c08c65a83f6b4ea3e04e1cc70cbe3cd391499e3e05ab7dedf28aff9afc538200ff93e3f2b2cb5029f03c7ebee820d63a4c5a9541c83acebe293f54cacf0e\" }");
         assert_eq!(format!("{:?}", signature), "Signature { v: 0, r: \"8a4f2d73a2cc80cdfe27c6e3ab68de7913865a5968298731bee7b4673752fd76\", s: \"77c9027a03e635b730b3e3e593f968d0ef7cad1848cf0293be9d7aba56c71859\" }");
     }
@@ -246,15 +234,10 @@ mod tests {
         let key = SecretKey::from_raw(&secret).unwrap();
 
         let pass = "hunter2".into();
-        let crypto = key
-            .to_crypto(&pass, 4096)
-            .unwrap();
+        let crypto = key.to_crypto(&pass, 4096).unwrap();
         let key2 = SecretKey::from_crypto(&crypto, &pass).unwrap();
 
-        assert_eq!(
-            key.public().bytes().as_ref(),
-            key2.public().bytes().as_ref()
-        );
+        assert_eq!(key.public().bytes().as_ref(), key2.public().bytes().as_ref());
     }
 
     #[test]
@@ -282,10 +265,9 @@ mod tests {
             .from_hex()
             .unwrap();
         let key = SecretKey::from_raw(&secret).unwrap();
-        let other_secret: Vec<u8> =
-            "2222222222222222222222222222222222222222222222222222222222222222"
-                .from_hex()
-                .unwrap();
+        let other_secret: Vec<u8> = "2222222222222222222222222222222222222222222222222222222222222222"
+            .from_hex()
+            .unwrap();
         let other_key = SecretKey::from_raw(&other_secret).unwrap();
         let message: Vec<u8> = "12da94d92a71f7692013002513e5bc4a3180344cfe3292e2b54c15f9d4421965"
             .from_hex()

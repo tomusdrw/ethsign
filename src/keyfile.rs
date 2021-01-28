@@ -2,7 +2,7 @@
 
 use crate::crypto::{self, Keccak256};
 use crate::error::Error;
-use crate::{SecretKey, Protected};
+use crate::{Protected, SecretKey};
 
 use rand::{thread_rng, RngCore};
 use serde::{Deserialize, Serialize};
@@ -111,11 +111,7 @@ pub enum Prf {
 
 impl Crypto {
     /// Encrypt plain data with password
-    pub fn encrypt(
-        plain: &[u8],
-        password: &Protected,
-        iterations: u32,
-    ) -> Result<Self, Error> {
+    pub fn encrypt(plain: &[u8], password: &Protected, iterations: u32) -> Result<Self, Error> {
         let mut rng = thread_rng();
 
         let mut salt = [0u8; 32];
@@ -144,9 +140,7 @@ impl Crypto {
 
         Ok(Crypto {
             cipher: Cipher::Aes128Ctr,
-            cipherparams: Aes128Ctr {
-                iv: Bytes(iv.to_vec()),
-            },
+            cipherparams: Aes128Ctr { iv: Bytes(iv.to_vec()) },
             ciphertext,
             kdf: Kdf::Pbkdf2(Pbkdf2 {
                 c: iterations,
@@ -161,17 +155,11 @@ impl Crypto {
     /// Decrypt into plain data
     pub fn decrypt(&self, password: &Protected) -> Result<Vec<u8>, Error> {
         let (left_bits, right_bits) = match self.kdf {
-            Kdf::Pbkdf2(ref params) => {
-                crypto::derive_key_iterations(password.as_ref(), &params.salt.0, params.c)
+            Kdf::Pbkdf2(ref params) => crypto::derive_key_iterations(password.as_ref(), &params.salt.0, params.c),
+            Kdf::Scrypt(ref params) => {
+                crypto::scrypt::derive_key(password.as_ref(), &params.salt.0, params.n, params.p, params.r)
+                    .map_err(Error::ScryptError)?
             }
-            Kdf::Scrypt(ref params) => crypto::scrypt::derive_key(
-                password.as_ref(),
-                &params.salt.0,
-                params.n,
-                params.p,
-                params.r,
-            )
-            .map_err(Error::ScryptError)?,
         };
 
         let mac = crypto::derive_mac(&right_bits, &self.ciphertext.0).keccak256();
@@ -182,14 +170,9 @@ impl Crypto {
 
         let mut plain = Vec::new();
         plain.resize(self.ciphertext.0.len(), 0);
-        crypto::aes::decrypt_128_ctr(
-            &left_bits,
-            &self.cipherparams.iv.0,
-            &self.ciphertext.0,
-            &mut plain,
-        )
-        .map_err(crypto::Error::from)
-        .map_err(Error::Crypto)?;
+        crypto::aes::decrypt_128_ctr(&left_bits, &self.cipherparams.iv.0, &self.ciphertext.0, &mut plain)
+            .map_err(crypto::Error::from)
+            .map_err(Error::Crypto)?;
 
         Ok(plain)
     }

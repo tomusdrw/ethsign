@@ -1,8 +1,8 @@
 //! Error handling module
 
-use std::fmt;
 pub use crate::aes::SymmError;
 pub use crate::scrypt::ScryptError;
+use std::fmt;
 
 /// Generic Error type for the crate
 #[derive(Debug)]
@@ -10,7 +10,7 @@ pub enum Error {
     /// AES encryption error
     Aes(SymmError),
     /// Scrypt encryption error
-    Scrypt(ScryptError)
+    Scrypt(ScryptError),
 }
 
 impl From<SymmError> for Error {

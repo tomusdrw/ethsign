@@ -60,13 +60,7 @@ mod secp256k1 {
 
     /// Checks ECDSA validity of `signature(v ,r ,s)` for `message` with `public` key.
     /// Returns `Ok(true)` on success.
-    pub fn verify(
-        public: &[u8],
-        v: u8,
-        r: &[u8; 32],
-        s: &[u8; 32],
-        message: &[u8],
-    ) -> Result<bool, Error> {
+    pub fn verify(public: &[u8], v: u8, r: &[u8; 32], s: &[u8; 32], message: &[u8]) -> Result<bool, Error> {
         let sig = to_recoverable_signature(v, r, s)?.to_standard();
         let msg = secp256k1::Message::from_slice(message)?;
 
@@ -131,13 +125,7 @@ mod secp256k1 {
 
     /// Checks ECDSA validity of `signature(r, s)` for `message` with `public` key.
     /// Returns `Ok(true)` on success.
-    pub fn verify(
-        public: &[u8],
-        _v: u8,
-        r: &[u8; 32],
-        s: &[u8; 32],
-        message: &[u8],
-    ) -> Result<bool, Error> {
+    pub fn verify(public: &[u8], _v: u8, r: &[u8; 32], s: &[u8; 32], message: &[u8]) -> Result<bool, Error> {
         let sig = to_signature(r, s);
         let msg = libsecp256k1::Message::parse_slice(message)?;
 
