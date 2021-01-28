@@ -1,10 +1,6 @@
 use std::fmt;
 
-use crate::crypto::Keccak256;
-use crate::ec;
-use crate::error::Error;
-use crate::keyfile::Crypto;
-use crate::protected::Protected;
+use crate::{crypto::Keccak256, ec, error::Error, keyfile::Crypto, protected::Protected};
 use rustc_hex::ToHex;
 
 /// Message signature

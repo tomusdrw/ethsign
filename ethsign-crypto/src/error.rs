@@ -1,7 +1,6 @@
 //! Error handling module
 
-pub use crate::aes::SymmError;
-pub use crate::scrypt::ScryptError;
+pub use crate::{aes::SymmError, scrypt::ScryptError};
 use std::fmt;
 
 /// Generic Error type for the crate

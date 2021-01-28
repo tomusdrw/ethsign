@@ -1,8 +1,10 @@
 //! JSON keyfile representation.
 
-use crate::crypto::{self, Keccak256};
-use crate::error::Error;
-use crate::{Protected, SecretKey};
+use crate::{
+    crypto::{self, Keccak256},
+    error::Error,
+    Protected, SecretKey,
+};
 
 use rand::{thread_rng, RngCore};
 use serde::{Deserialize, Serialize};
