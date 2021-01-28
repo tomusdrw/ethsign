@@ -71,4 +71,4 @@ jobs:
         with:
           command:                 test
           toolchain:               stable
-          args:                    --verbose --no-default-features -- features pure-rust
+          args:                    --all --verbose --no-default-features --features pure-rust
