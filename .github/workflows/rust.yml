@@ -51,3 +51,15 @@ jobs:
           toolchain:               stable
           args:                    --all --verbose
 
+  check-features:
+    name:                          Check features
+    runs-on:                       ubuntu-latest
+    env:
+      RUST_BACKTRACE:              full
+    steps:
+      - name:                      Testing with pure Rust dependencies
+        uses:                      actions-rs/cargo@master
+        with:
+          command:                 test
+          toolchain:               stable
+          args:                    --all --verbose --no-default-features -- features pure-rust
