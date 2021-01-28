@@ -1,15 +1,15 @@
 //! Pure Rust drop-in replacement for the `parity-crypto` crate.
 
 pub mod aes;
-pub mod scrypt;
 pub mod error;
+pub mod scrypt;
 
 pub use error::Error;
 
-use sha2::Sha256;
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
-use tiny_keccak::{Keccak, Hasher};
+use sha2::Sha256;
+use tiny_keccak::{Hasher, Keccak};
 
 pub const KEY_LENGTH: usize = 32;
 pub const KEY_LENGTH_AES: usize = KEY_LENGTH / 2;

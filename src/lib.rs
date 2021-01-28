@@ -42,7 +42,9 @@ use ethsign_crypto as crypto;
 
 pub mod keyfile;
 
-pub use self::error::Error;
-pub use self::key::{PublicKey, SecretKey, Signature};
-pub use self::keyfile::KeyFile;
-pub use self::protected::Protected;
+pub use self::{
+    error::Error,
+    key::{PublicKey, SecretKey, Signature},
+    keyfile::KeyFile,
+    protected::Protected,
+};

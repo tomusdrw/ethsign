@@ -1,9 +1,10 @@
 //! AES symmetric encryption
 
+use aes_ctr::{
+    cipher::{generic_array::GenericArray, NewStreamCipher, SyncStreamCipher},
+    Aes128Ctr,
+};
 use std::fmt;
-use aes_ctr::Aes128Ctr;
-use aes_ctr::cipher::generic_array::GenericArray;
-use aes_ctr::cipher::{NewStreamCipher, SyncStreamCipher};
 
 /// Error type for the AES symmetric encryption
 #[derive(Debug)]
