@@ -7,7 +7,7 @@ homepage = "https://github.com/tomusdrw/ethsign"
 license = "GPL-3.0"
 name = "ethsign"
 repository = "https://github.com/tomusdrw/ethsign"
-version = "0.7.3"
+version = "0.8.0"
 
 [dependencies]
 zeroize = "1.0.0"
