@@ -104,7 +104,7 @@ mod secp256k1 {
         data[0..32].copy_from_slice(r);
         data[32..64].copy_from_slice(s);
 
-        libsecp256k1::Signature::parse(&data)
+        libsecp256k1::Signature::parse_standard(&data)
     }
 
     /// Recover the signer of the message.
