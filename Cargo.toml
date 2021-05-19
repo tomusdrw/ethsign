@@ -18,7 +18,7 @@ parity-crypto = { version = "0.8", optional = true }
 serde = { version = "1.0", features = ["derive"]}
 
 # Libraries for for pure-rust crypto
-libsecp256k1 = { package="libsecp256k1", version = "0.3.1", optional = true }
+libsecp256k1 = { package="libsecp256k1", version = "0.5.0", optional = true }
 ethsign-crypto = { version = "0.2.1", path = "./ethsign-crypto", optional = true }
 
 [dev-dependencies]

@@ -99,18 +99,18 @@ mod secp256k1 {
         Ok((rec_id.serialize(), sig.serialize()))
     }
 
-    fn to_signature(r: &[u8; 32], s: &[u8; 32]) -> libsecp256k1::Signature {
+    fn to_signature(r: &[u8; 32], s: &[u8; 32]) -> Result<libsecp256k1::Signature, Error> {
         let mut data = [0u8; 64];
         data[0..32].copy_from_slice(r);
         data[32..64].copy_from_slice(s);
 
-        libsecp256k1::Signature::parse(&data)
+        Ok(libsecp256k1::Signature::parse_standard(&data)?)
     }
 
     /// Recover the signer of the message.
     pub fn recover(v: u8, r: &[u8; 32], s: &[u8; 32], message: &[u8]) -> Result<[u8; 65], Error> {
         let rec_id = libsecp256k1::RecoveryId::parse(v)?;
-        let sig = to_signature(r, s);
+        let sig = to_signature(r, s)?;
         let msg = libsecp256k1::Message::parse_slice(message)?;
         let pubkey = libsecp256k1::recover(&msg, &sig, &rec_id)?;
 
@@ -126,7 +126,7 @@ mod secp256k1 {
     /// Checks ECDSA validity of `signature(r, s)` for `message` with `public` key.
     /// Returns `Ok(true)` on success.
     pub fn verify(public: &[u8], _v: u8, r: &[u8; 32], s: &[u8; 32], message: &[u8]) -> Result<bool, Error> {
-        let sig = to_signature(r, s);
+        let sig = to_signature(r, s)?;
         let msg = libsecp256k1::Message::parse_slice(message)?;
 
         Ok(libsecp256k1::verify(&msg, &sig, &to_pubkey(public)?))
