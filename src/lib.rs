@@ -32,8 +32,6 @@ mod error;
 mod key;
 mod protected;
 
-// Use pure Rust drop-in replacement `ethsign-crypto` of `parity-crypto`.
-#[cfg(feature = "ethsign-crypto")]
 use ethsign_crypto as crypto;
 
 pub mod keyfile;
