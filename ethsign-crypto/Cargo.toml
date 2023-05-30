@@ -1,6 +1,6 @@
 [package]
 name = "ethsign-crypto"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 documentation = "https://docs.rs/crate/ethsign-crypto"
@@ -10,8 +10,8 @@ description = "Pure Rust drop-in replacement for the `parity-crypto` crate"
 license = "GPL-3.0"
 
 [dependencies]
-pbkdf2 = { version = "0.10.0", features = [ "parallel" ], default-features = false }
-scrypt = "0.8.0"
+pbkdf2 = { version = "0.11.0", features = [ "parallel" ], default-features = false }
+scrypt = "0.10"
 sha2 = "0.10.1"
 hmac = "0.12.0"
 aes = { version = "0.7.5", features = [ "ctr" ], default-features = false }

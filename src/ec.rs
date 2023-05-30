@@ -1,4 +1,9 @@
-pub use self::secp256k1::*;
+//! `secp256k1` implementation module
+
+#[doc(inline)]
+pub use self::secp256k1::Error;
+
+pub(crate) use self::secp256k1::*;
 
 #[cfg(not(feature = "pure-rust"))]
 mod secp256k1 {
