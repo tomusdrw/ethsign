@@ -24,7 +24,7 @@ impl fmt::Display for SymmError {
     }
 }
 
-/// Encrypt a message (CTR mode)..into()
+/// Encrypt a message (CTR mode).
 ///
 /// Key (`k`) length and initialisation vector (`iv`) length have to be 16 bytes each.
 /// An error is returned if the input lengths are invalid.
