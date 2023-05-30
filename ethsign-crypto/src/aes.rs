@@ -1,8 +1,8 @@
 //! AES symmetric encryption
 
 use aes::{
-    cipher::{generic_array::GenericArray, FromBlockCipher, NewBlockCipher, StreamCipher},
-    Aes128, Aes128Ctr,
+    cipher::{generic_array::GenericArray, KeyIvInit, StreamCipher},
+    Aes128,
 };
 use std::fmt;
 
@@ -44,8 +44,7 @@ pub fn encrypt_128_ctr(k: &[u8], iv: &[u8], plain: &[u8], dest: &mut [u8]) -> Re
 
     dest.copy_from_slice(plain);
 
-    let cipher = Aes128::new(&key);
-    let mut cipher_ctr = Aes128Ctr::from_block_cipher(cipher, &nonce);
+    let mut cipher_ctr = ctr::Ctr128BE::<Aes128>::new(&key, &nonce);
     cipher_ctr.apply_keystream(dest);
 
     Ok(())
