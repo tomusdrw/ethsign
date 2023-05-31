@@ -2,9 +2,10 @@
 
 use crate::ec;
 
-pub use crate::crypto::error::ScryptError;
-pub use crate::crypto::Error as EthsignCryptoError;
-pub use crate::ec::Error as Secp256k1Error;
+pub use crate::{
+    crypto::{error::ScryptError, Error as EthsignCryptoError},
+    ec::Error as Secp256k1Error,
+};
 
 /// Key error
 #[derive(Debug)]
