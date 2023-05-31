@@ -2,8 +2,8 @@
 
 use crate::ec;
 
+pub use crate::crypto::error::ScryptError;
 pub use crate::crypto::Error as EthsignCryptoError;
-pub use crate::crypto::error::ScryptError as ScryptError;
 pub use crate::ec::Error as Secp256k1Error;
 
 /// Key error
