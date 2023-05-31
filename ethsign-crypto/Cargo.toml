@@ -1,6 +1,6 @@
 [package]
 name = "ethsign-crypto"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 documentation = "https://docs.rs/crate/ethsign-crypto"
