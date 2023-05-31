@@ -2,17 +2,21 @@
 
 use crate::ec;
 
+pub use crate::crypto::Error as EthsignCryptoError;
+pub use crate::crypto::error::ScryptError as ScryptError;
+pub use crate::ec::Error as Secp256k1Error;
+
 /// Key error
 #[derive(Debug)]
 pub enum Error {
     /// Invalid password for the keyfile
     InvalidPassword,
     /// Crypto error
-    Crypto(crate::crypto::Error),
+    Crypto(EthsignCryptoError),
     /// Scrypt error
-    ScryptError(crate::crypto::error::ScryptError),
+    ScryptError(ScryptError),
     /// Secp256k1 error
-    Secp256k1(crate::ec::Error),
+    Secp256k1(Secp256k1Error),
 }
 
 impl std::fmt::Display for Error {
