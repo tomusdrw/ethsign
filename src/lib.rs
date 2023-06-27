@@ -28,12 +28,12 @@
 #![warn(missing_docs)]
 
 mod ec;
-mod error;
 mod key;
 mod protected;
 
 use ethsign_crypto as crypto;
 
+pub mod error;
 pub mod keyfile;
 
 pub use self::{
