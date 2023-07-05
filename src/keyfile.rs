@@ -3,7 +3,7 @@
 use crate::{
     crypto::{self, Keccak256},
     error::Error,
-    Protected, SecretKey,
+    Unprotected, SecretKey,
 };
 
 use rand::{thread_rng, RngCore};
@@ -29,7 +29,7 @@ pub struct KeyFile {
 
 impl KeyFile {
     /// Attemp to convert the `KeyFile` into `SecretKey`.
-    pub fn to_secret_key(&self, password: &Protected) -> Result<SecretKey, Error> {
+    pub fn to_secret_key(&self, password: &Unprotected) -> Result<SecretKey, Error> {
         SecretKey::from_crypto(&self.crypto, password)
     }
 }
@@ -113,7 +113,7 @@ pub enum Prf {
 
 impl Crypto {
     /// Encrypt plain data with password
-    pub fn encrypt(plain: &[u8], password: &Protected, iterations: u32) -> Result<Self, Error> {
+    pub fn encrypt(plain: &[u8], password: &Unprotected, iterations: u32) -> Result<Self, Error> {
         let mut rng = thread_rng();
 
         let mut salt = [0u8; 32];
@@ -155,7 +155,7 @@ impl Crypto {
     }
 
     /// Decrypt into plain data
-    pub fn decrypt(&self, password: &Protected) -> Result<Vec<u8>, Error> {
+    pub fn decrypt(&self, password: &Unprotected) -> Result<Vec<u8>, Error> {
         let (left_bits, right_bits) = match self.kdf {
             Kdf::Pbkdf2(ref params) => crypto::derive_key_iterations(password.as_ref(), &params.salt.0, params.c),
             Kdf::Scrypt(ref params) => {
@@ -237,7 +237,7 @@ mod tests {
     #[test]
     fn decrypt_encrypt() {
         let data = &b"It was the year they finally immanentized the Eschaton."[..];
-        let password = Protected::new(b"discord".to_vec());
+        let password = Unprotected::new(b"discord".to_vec());
 
         let crypto = Crypto::encrypt(data, &password, 10240).unwrap();
         let decrypted = crypto.decrypt(&password).unwrap();

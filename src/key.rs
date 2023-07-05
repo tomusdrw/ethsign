@@ -1,6 +1,7 @@
+use std::convert::TryInto;
 use std::fmt;
 
-use crate::{crypto::Keccak256, ec, error::Error, keyfile::Crypto, protected::Protected};
+use crate::{crypto::Keccak256, ec, error::Error, keyfile::Crypto, protected::Unprotected};
 use rustc_hex::ToHex;
 
 /// Message signature
@@ -88,7 +89,7 @@ impl PublicKey {
 #[derive(Clone, Debug)]
 pub struct SecretKey {
     /// Valid secret (make sure to validate through secp256k1)
-    secret: Protected,
+    secret: Unprotected,
 }
 
 impl SecretKey {
@@ -98,19 +99,19 @@ impl SecretKey {
         ec::verify_secret(slice)?;
 
         Ok(Self {
-            secret: Protected::new(slice.to_vec()),
+            secret: Unprotected::new(slice.to_vec()),
         })
     }
 
     /// Convert a keyfile crypto into Ethereum Key
-    pub fn from_crypto(crypto: &Crypto, password: &Protected) -> Result<Self, Error> {
+    pub fn from_crypto(crypto: &Crypto, password: &Unprotected) -> Result<Self, Error> {
         let plain = crypto.decrypt(password)?;
 
         Self::from_raw(&plain).map_err(Error::Secp256k1)
     }
 
     /// Encrypt this secret key into Crypto object.
-    pub fn to_crypto(&self, password: &Protected, iterations: u32) -> Result<Crypto, Error> {
+    pub fn to_crypto(&self, password: &Unprotected, iterations: u32) -> Result<Crypto, Error> {
         Crypto::encrypt(self.secret.as_ref(), password, iterations)
     }
 
@@ -120,6 +121,10 @@ impl SecretKey {
             ec::secret_to_public(self.secret.as_ref()).expect("The key is validated in the constructor; qed");
 
         PublicKey::from_slice(&uncompressed[1..]).expect("The length of the key is correct; qed")
+    }
+
+    pub fn private(&self) -> [u8; 32] {
+        self.secret.as_ref().try_into().expect("The length of the key is correct; qed")
     }
 
     /// Sign given 32-byte message with the key.
@@ -145,7 +150,7 @@ mod tests {
     fn should_read_pbkdf_keyfile() {
         let keyfile: KeyFile = serde_json::from_str(include_str!("../res/wallet.json")).unwrap();
         let password = b"";
-        let key = SecretKey::from_crypto(&keyfile.crypto, &Protected::new(password.to_vec())).unwrap();
+        let key = SecretKey::from_crypto(&keyfile.crypto, &Unprotected::new(password.to_vec())).unwrap();
         let pub_key = key.public();
 
         assert_eq!(
@@ -159,7 +164,7 @@ mod tests {
     fn should_read_scrypt_keyfile() {
         let keyfile: KeyFile = serde_json::from_str(include_str!("../res/scrypt-wallet.json")).unwrap();
         let password = b"geth";
-        let key = SecretKey::from_crypto(&keyfile.crypto, &Protected::new(password.to_vec())).unwrap();
+        let key = SecretKey::from_crypto(&keyfile.crypto, &Unprotected::new(password.to_vec())).unwrap();
         let pub_key = key.public();
 
         assert_eq!(
@@ -194,7 +199,7 @@ mod tests {
         let pub_key = key.public();
         let signature = key.sign(&secret).unwrap();
 
-        assert_eq!(format!("{:?}", key), "SecretKey { secret: Protected(77..183) }");
+        assert_eq!(format!("{:?}", key), "SecretKey { secret: Unprotected(77..183) }");
         assert_eq!(format!("{:?}", pub_key), "PublicKey { address: \"00a329c0648769a73afac7f9381e08fb43dbea72\", public: \"3fa8c08c65a83f6b4ea3e04e1cc70cbe3cd391499e3e05ab7dedf28aff9afc538200ff93e3f2b2cb5029f03c7ebee820d63a4c5a9541c83acebe293f54cacf0e\" }");
         assert_eq!(format!("{:?}", signature), "Signature { v: 0, r: \"8a4f2d73a2cc80cdfe27c6e3ab68de7913865a5968298731bee7b4673752fd76\", s: \"77c9027a03e635b730b3e3e593f968d0ef7cad1848cf0293be9d7aba56c71859\" }");
     }

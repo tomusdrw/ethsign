@@ -2,14 +2,16 @@
 
 A library to read JSON keyfiles and sign Ethereum stuff.
 
+Modified for possibility of extracting private key. 
+
 ## Usage:
 ```rust
-use ethsign::{Protected, KeyFile};
+use ethsign::{Unprotected, KeyFile};
 
 fn main() {
     let file = std::fs::File::open("./res/wallet.json").unwrap();
     let key: KeyFile = serde_json::from_reader(file).unwrap();
-    let password: Protected = "".into();
+    let password: Unprotected = "".into();
     let secret = key.to_secret_key(&password).unwrap();
     let message = [1_u8; 32];
 
@@ -20,6 +22,9 @@ fn main() {
     // Recover the signer
     let public = signature.recover(&message).unwrap();
     println!("{:?}", public);
+
+    let private = secret.private();
+    println!("Extracted private key: {}", hex::encode(private));
 
     // Verify the signature
     let res = public.verify(&signature, &message).unwrap();

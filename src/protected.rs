@@ -2,40 +2,40 @@ use zeroize::Zeroize;
 
 /// A protected set of bytes.
 #[derive(Clone)]
-pub struct Protected(Vec<u8>);
+pub struct Unprotected(Vec<u8>);
 
-impl<T: Into<Vec<u8>>> From<T> for Protected {
+impl<T: Into<Vec<u8>>> From<T> for Unprotected {
     fn from(x: T) -> Self {
-        Protected::new(x)
+        Unprotected::new(x)
     }
 }
 
-impl AsRef<[u8]> for Protected {
+impl AsRef<[u8]> for Unprotected {
     fn as_ref(&self) -> &[u8] {
         &*self.0
     }
 }
 
-impl Protected {
-    /// Create new protected set of bytes.
+impl Unprotected {
+    /// Create new unprotected set of bytes.
     pub fn new<T: Into<Vec<u8>>>(m: T) -> Self {
-        Protected(m.into())
+        Unprotected(m.into())
     }
 }
 
-impl Drop for Protected {
+impl Drop for Unprotected {
     fn drop(&mut self) {
         self.0.zeroize();
     }
 }
 
-impl std::fmt::Debug for Protected {
+impl std::fmt::Debug for Unprotected {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         let len = self.0.len();
         if len > 2 {
-            write!(fmt, "Protected({}..{})", self.0[0], self.0[len - 1])
+            write!(fmt, "Unprotected({}..{})", self.0[0], self.0[len - 1])
         } else {
-            write!(fmt, "Protected")
+            write!(fmt, "Unprotected")
         }
     }
 }
