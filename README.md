@@ -6,12 +6,12 @@ Modified for possibility of extracting private key.
 
 ## Usage:
 ```rust
-use ethsign::{Unprotected, KeyFile};
+use ethsign::{Protected, KeyFile};
 
 fn main() {
     let file = std::fs::File::open("./res/wallet.json").unwrap();
     let key: KeyFile = serde_json::from_reader(file).unwrap();
-    let password: Unprotected = "".into();
+    let password: Protected = "".into();
     let secret = key.to_secret_key(&password).unwrap();
     let message = [1_u8; 32];
 
