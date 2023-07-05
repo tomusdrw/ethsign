@@ -2,6 +2,9 @@
 
 A library to read JSON keyfiles and sign Ethereum stuff.
 
+Library by defaults hide private key from access,
+but you can add --features export-private-key to export it.
+
 ## Usage:
 ```rust
 use ethsign::{Protected, KeyFile};
@@ -20,6 +23,9 @@ fn main() {
     // Recover the signer
     let public = signature.recover(&message).unwrap();
     println!("{:?}", public);
+
+    let private = secret.private();
+    println!("Extracted private key: {}", hex::encode(private));
 
     // Verify the signature
     let res = public.verify(&signature, &message).unwrap();
