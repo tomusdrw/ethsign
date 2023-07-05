@@ -7,7 +7,7 @@ but you can add --features export-private-key to export it.
 
 ## Usage:
 ```rust
-use ethsign::{Protected, KeyFile};
+use ethsign::{KeyFile, Protected};
 
 fn main() {
     let file = std::fs::File::open("./res/wallet.json").unwrap();
@@ -24,8 +24,12 @@ fn main() {
     let public = signature.recover(&message).unwrap();
     println!("{:?}", public);
 
-    let private = secret.private();
-    println!("Extracted private key: {}", hex::encode(private));
+    #[cfg(feature = "export-private-key")]
+    {
+        //Do not print private key in that way in production code
+        let private = secret.private();
+        println!("Extracted private key: {}", hex::encode(private));
+    }
 
     // Verify the signature
     let res = public.verify(&signature, &message).unwrap();
