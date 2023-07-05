@@ -6,7 +6,7 @@ edition = "2021"
 homepage = "https://github.com/tomusdrw/ethsign"
 license = "GPL-3.0"
 name = "ethsign"
-repository = "https://github.com/tomusdrw/ethsign"
+repository = "https://github.com/golemfactory/ethsign"
 version = "0.10.0"
 
 [dependencies]
