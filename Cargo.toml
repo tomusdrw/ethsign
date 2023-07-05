@@ -2,7 +2,7 @@
 authors = ["Parity Technologies <admin@parity.io>"]
 description = "A library to read JSON keyfiles and sign Ethereum stuff."
 documentation = "https://docs.rs/crate/ethsign"
-edition = "2018"
+edition = "2021"
 homepage = "https://github.com/tomusdrw/ethsign"
 license = "GPL-3.0"
 name = "ethsign"
