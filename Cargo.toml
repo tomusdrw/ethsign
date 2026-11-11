@@ -22,10 +22,12 @@ ethsign-crypto = { version = "0.3", path = "./ethsign-crypto" }
 
 [dev-dependencies]
 serde_json = "1.0"
+hex = "0.4"
 
 [features]
 default = ["secp256k1"]
 pure-rust = ["libsecp256k1"]
+export-private-key = []
 
 [workspace]
 members = [
